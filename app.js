@@ -131,9 +131,11 @@ function syncTimeLabel(ts=syncConfig.lastSyncAt){
   if(!ts)return '尚未同步';
   return new Date(ts).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
 }
+function isIosDevice(){return /iPhone|iPad|iPod/i.test(navigator.userAgent);}
+function isStandaloneApp(){return !!navigator.standalone||!!window.matchMedia?.('(display-mode: standalone)').matches;}
 function syncIosNote(){
-  const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent);
-  const standalone=!!navigator.standalone||window.matchMedia?.('(display-mode: standalone)').matches;
+  const ios=isIosDevice();
+  const standalone=isStandaloneApp();
   if(!ios||standalone)return '';
   return '<div class="data-note"><b>iPhone：</b>建议先在 Safari 里「分享 → 添加到主屏幕」，再从主屏幕的「词间」打开配置同步。Safari 和主屏幕 App 的本地存储是分开的，先在 Safari 配置不会自动带过去。</div>';
 }
@@ -185,12 +187,13 @@ function syncPanelHtml(){
       <div class="section-head"><div><h2>跨设备同步</h2><div class="sub">电脑和 iPhone 共用同一份学习进度</div></div><span class="chip ${info.cls}" id="sync-status-chip">${info.label}</span></div>
       <p class="form-sub">学习数据放在你的私有 GitHub Gist；token 只保存在本机浏览器，不写进学习备份。${pending?'已从配对链接读取同步空间，只需粘贴 token。':''}</p>
       <div class="sync-setup">
-        <div class="field"><label for="sync-token">GitHub token（只需 gist 权限）</label><input id="sync-token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ghp_... 或 github_pat_..."><a class="text-btn" href="https://github.com/settings/tokens/new?scopes=gist&description=word-garden-sync" target="_blank" rel="noopener">去 GitHub 创建 token ↗</a></div>
+        <div class="field"><label for="sync-token">GitHub token 或整段手机配对信息</label><input id="sync-token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ghp_... 或 github_pat_..."><a class="text-btn" href="https://github.com/settings/tokens/new?scopes=gist&description=word-garden-sync" target="_blank" rel="noopener">去 GitHub 创建 token ↗</a></div>
         <div class="field"><label for="sync-gist">同步空间 ID（已有就填；没有留空自动创建）</label><input id="sync-gist" value="${esc(syncRuntime.pendingGist||'')}" placeholder="32 位 ID；手机端可由配对链接自动带入" autocomplete="off" spellcheck="false"></div>
       </div>
       <div class="settings-actions">
-        <button class="btn primary" data-action="sync-create" data-sync-action>创建同步空间并上传本机</button>
-        <button class="btn ghost" data-action="sync-connect" data-sync-action>用这个 ID 下载云端</button>
+        ${isIosDevice()
+          ? `<button class="btn primary" data-action="sync-connect" data-sync-action>${icon('download')} 用这个 ID 下载云端</button><button class="text-btn" data-action="sync-create" data-sync-action>在手机上新建同步空间（不推荐）</button>`
+          : `<button class="btn primary" data-action="sync-create" data-sync-action>创建同步空间并上传本机</button><button class="btn ghost" data-action="sync-connect" data-sync-action>用这个 ID 下载云端</button>`}
       </div>
       <div id="sync-error" class="form-error">${esc(syncRuntime.error||'')}</div>
       <div class="data-note"><b>建议流程：</b>电脑上创建同步空间 → 复制手机配对信息 → iPhone 先添加到主屏幕，再从主屏幕 App 里粘贴配对信息并下载。之后打开应用会自动同步。<br>在 iPhone 上用 Safari 打开 <a href="${esc(publicAppUrl())}" target="_blank" rel="noopener">${esc(publicAppUrl())}</a>，然后「分享 → 添加到主屏幕」。</div>
@@ -303,8 +306,9 @@ function connectSyncFromForm(){
 }
 function applyRemoteState(remote){
   const next=validateBackup(remote.state,baseWords);
+  migratePreferences(next);migrateToV2(next);migrateSettings(next);
   applyingRemote=true;
-  state=next;syncWords();
+  state=next;syncWords();blocked=false;
   try{localStorage.setItem(KEY,JSON.stringify(state));}finally{applyingRemote=false;}
   syncConfig.lastRemoteAt=remote.updatedAt;syncConfig.lastSyncAt=remote.updatedAt;syncConfig.lastLocalAt=remote.updatedAt;syncConfig.lastHash=fingerprint(state);
   saveSyncConfig(syncConfig);
@@ -366,7 +370,7 @@ async function autoSync(){
         if(view!=='study'&&!document.hidden)openSyncConflict(remote);else toast('云端有更新；学完这组后到设置处理同步');
         return;
       }
-      if(view==='study'||state.session){syncRuntime.busy=false;setSyncStatus('idle');return;}
+      if(view==='study'||pendingSessions().length){syncRuntime.busy=false;setSyncStatus('idle');if(view!=='study')toast('云端有更新，学完当前组后可同步');return;}
       applyRemoteState(remote);syncRuntime.busy=false;setSyncStatus('synced');toast('已同步另一台设备的最新进度');
       return;
     }
@@ -420,7 +424,12 @@ function resolvedTheme(){
   return darkQuery?.matches?'dark':'light';
 }
 function applyTheme(){
-  document.documentElement.dataset.theme=resolvedTheme();
+  const theme=resolvedTheme();
+  document.documentElement.dataset.theme=theme;
+  const meta=document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+  if(meta)meta.content=theme==='dark'?'black-translucent':'default';
+  const color=document.querySelector('meta[name="theme-color"]');
+  if(color)color.content=theme==='dark'?'#080b14':'#f5f4fa';
 }
 darkQuery?.addEventListener?.('change',()=>{
   if((state.settings.theme||'auto')==='auto'&&!['study'].includes(view)){applyTheme();render();}
@@ -1213,7 +1222,7 @@ function renderSettings(){
   const newValue=dailyNew(),reviewValue=dailyReview();
   const options=(list,value)=>list.map(([v,t])=>`<option value="${v}" ${String(value)===String(v)?'selected':''}>${t}</option>`).join('');
   return `<div class="page-head">
-    <div><p class="eyebrow">MAKE IT YOUR OWN</p><h1>按自己的节奏来。</h1><p>调整每天的份量和记忆目标，数据始终留在本机。</p></div>
+    <div><p class="eyebrow">MAKE IT YOUR OWN</p><h1>按自己的节奏来。</h1><p>调整每天的份量和记忆目标；默认本机保存，开启同步后可跨设备。</p></div>
     <div class="head-actions"><button class="btn ghost" data-action="show-shortcuts">${icon('keyboard')} 快捷键</button></div>
   </div>
   <div class="settings-grid">
