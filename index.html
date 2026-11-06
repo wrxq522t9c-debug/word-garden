@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="dark light"><meta name="theme-color" content="#0a0d16"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="词间"><title>词间 · 六级单词计划</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%238b7cff'/%3E%3Cstop offset='1' stop-color='%233ad6c0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='18' fill='url(%23g)'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-size='36' font-family='-apple-system,sans-serif' font-weight='700' fill='white'%3E词%3C/text%3E%3C/svg%3E">
+<script>
+(function(){try{var key=location.search.indexOf('test')>-1?'word-garden-test-v1':'word-garden-v1';var raw=localStorage.getItem(key);var theme='auto';if(raw){var parsed=JSON.parse(raw);theme=(parsed.settings&&parsed.settings.theme)||'auto';}var dark=theme==='dark'||(theme==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.dataset.theme=dark?'dark':'light';}catch(e){document.documentElement.dataset.theme='dark';}})();
+</script>
+<link rel="stylesheet" href="styles.css"></head>
+<body>
+<div id="app"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<dialog id="word-dialog" aria-label="单词详情"></dialog>
+<dialog id="add-word-dialog" aria-label="添加新词"></dialog>
+<dialog id="shortcuts-dialog" aria-label="键盘快捷键"></dialog>
+<dialog id="sync-conflict-dialog" aria-label="同步冲突"></dialog>
+<input id="import-file" type="file" accept=".json,application/json" hidden>
+<script type="module" src="app.js"></script>
+<script>if("serviceWorker" in navigator && location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
+</body></html>
