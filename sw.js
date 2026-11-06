@@ -1,5 +1,5 @@
 // 词间 PWA：只在 HTTPS（GitHub Pages）下注册；网络优先，离线回退缓存。
-const CACHE='word-garden-v1-2026-11-06';
+const CACHE='word-garden-1793924520924';
 const ASSETS=[
   './','./index.html','./styles.css','./app.js','./engine.js','./packs.js','./audio.js','./sync.js','./words.js',
   './vendor/ts-fsrs.js','./manifest.json','./icons/icon-192.png','./icons/icon-512.png','./icons/apple-touch-icon.png'

@@ -64,6 +64,7 @@ const ICONS={
   target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
   download:'<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 17v3h16v-3"/>',
   refresh:'<path d="M20 7v5h-5"/><path d="M4 17v-5h5"/><path d="M6.5 9a7 7 0 0 1 11.6-2L20 12"/><path d="M17.5 15a7 7 0 0 1-11.6 2L4 12"/>',
+  upload:'<path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/>',
   link:'<path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7L13 18"/>',
 };
 function icon(name,cls=''){return `<svg class="icon ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]||''}</svg>`;}
@@ -130,6 +131,12 @@ function syncTimeLabel(ts=syncConfig.lastSyncAt){
   if(!ts)return '尚未同步';
   return new Date(ts).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
 }
+function syncIosNote(){
+  const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const standalone=!!navigator.standalone||window.matchMedia?.('(display-mode: standalone)').matches;
+  if(!ios||standalone)return '';
+  return '<div class="data-note"><b>iPhone：</b>建议先在 Safari 里「分享 → 添加到主屏幕」，再从主屏幕的「词间」打开配置同步。Safari 和主屏幕 App 的本地存储是分开的，先在 Safari 配置不会自动带过去。</div>';
+}
 function syncStatusInfo(){
   if(!syncEnabled)return {label:'测试模式',cls:'warn'};
   if(!syncConfigured())return {label:'未连接',cls:''};
@@ -186,7 +193,8 @@ function syncPanelHtml(){
         <button class="btn ghost" data-action="sync-connect" data-sync-action>用这个 ID 下载云端</button>
       </div>
       <div id="sync-error" class="form-error">${esc(syncRuntime.error||'')}</div>
-      <div class="data-note"><b>建议流程：</b>电脑上创建同步空间 → 复制手机配对链接 → iPhone 打开配对链接，粘贴同一个 token → 从云端下载。之后打开应用会自动同步。<br>在 iPhone 上用 Safari 打开 <a href="${esc(publicAppUrl())}" target="_blank" rel="noopener">${esc(publicAppUrl())}</a>，然后「分享 → 添加到主屏幕」。</div>
+      <div class="data-note"><b>建议流程：</b>电脑上创建同步空间 → 复制手机配对信息 → iPhone 先添加到主屏幕，再从主屏幕 App 里粘贴配对信息并下载。之后打开应用会自动同步。<br>在 iPhone 上用 Safari 打开 <a href="${esc(publicAppUrl())}" target="_blank" rel="noopener">${esc(publicAppUrl())}</a>，然后「分享 → 添加到主屏幕」。</div>
+      ${syncIosNote()}
     </section>`;
   }
   const login=syncConfig.login?`GitHub @${esc(syncConfig.login)}`:'GitHub 已连接';
@@ -204,15 +212,17 @@ function syncPanelHtml(){
       <label class="switch"><input id="sync-auto" type="checkbox" data-setting="syncAuto" ${syncConfig.auto?'checked':''}><span></span></label>
     </div>
     <div class="settings-actions">
-      <button class="btn primary" data-action="sync-push" data-sync-action>${icon('download')} 上传本机</button>
-      <button class="btn ghost" data-action="sync-pull" data-sync-action>${icon('refresh')} 从云端下载</button>
+      <button class="btn primary" data-action="sync-push" data-sync-action>${icon('upload')} 上传本机</button>
+      <button class="btn ghost" data-action="sync-pull" data-sync-action>${icon('download')} 从云端下载</button>
       ${syncRuntime.conflict?'<button class="btn ghost" data-action="sync-conflict">处理同步冲突</button>':''}
-      <button class="btn ghost" data-action="sync-pair">${icon('link')} 复制手机配对链接</button>
+      <button class="btn ghost" data-action="sync-phone">${icon('link')} 复制手机配对信息</button>
+      <button class="text-btn" data-action="sync-pair">复制配对链接</button>
       <button class="text-btn" data-action="sync-copy-gist">复制同步 ID</button>
       <button class="text-btn" data-action="sync-disconnect">断开同步</button>
     </div>
     <div id="sync-error" class="form-error">${esc(syncRuntime.error||'')}</div>
     <div class="data-note">token 只保存在本机；学习数据在私有 Gist 中。两边都改过时会弹窗让你选，不会悄悄覆盖。iPhone 上用 Safari 打开上面的地址，分享 → 添加到主屏幕。</div>
+    ${syncIosNote()}
   </section>`;
 }
 function downloadLocalBackup(label){
@@ -224,6 +234,18 @@ async function copyText(text,label){
 }
 function copyGistId(){copyText(syncConfig.gistId,'同步 ID');}
 function copyPairLink(){copyText(pairingUrl(),'手机配对链接');}
+function parsePhoneInfo(text){
+  const raw=String(text||'');
+  const token=(raw.match(/(?:github_pat_[A-Za-z0-9_]{20,}|gh[pousr]_[A-Za-z0-9_]{20,})/)||[])[0]||'';
+  const labeled=raw.match(/(?:同步\s*ID|Gist\s*ID)[：:]\s*([A-Za-z0-9_-]{6,}?)(?=\s|Token[：:]|$)/i);
+  const fromUrl=raw.match(/gist=([0-9a-f]{20,})/i)||raw.match(/gist\.github\.com\/[^/\s]+\/([0-9a-f]{20,})/i);
+  return {token,gistId:(labeled||fromUrl||[])[1]||''};
+}
+function copyPhoneInfo(){
+  const text=`词间跨设备同步\n网页：${publicAppUrl()}\n同步 ID：${syncConfig.gistId}\nToken：${syncConfig.token}\n\n在 iPhone 的「词间」→ 设置 → 跨设备同步，把这段粘贴到 token 输入框即可。`;
+  copyText(text,'手机配对信息（含 token）');
+  setTimeout(()=>toast('这段信息含 token，请只发给自己'),900);
+}
 function disconnectSync(){
   if(!confirm('断开同步？本机学习进度保留，只是不再上传或下载。'))return;
   clearSyncConfig();
@@ -254,10 +276,13 @@ function createSyncFromForm(){
 function connectSyncFromForm(){
   if(!syncEnabled)return;
   if(syncRuntime.busy)return;
-  const token=document.querySelector('#sync-token')?.value.trim()||'';
-  const gistId=extractGistId(document.querySelector('#sync-gist')?.value||'');
-  if(!token){toast('先粘贴 GitHub token');return;}
-  if(!gistId){toast('填写同步空间 ID，或从手机配对链接打开');return;}
+  const raw=document.querySelector('#sync-token')?.value.trim()||'';
+  const parsed=parsePhoneInfo(raw);
+  const token=parsed.token||raw;
+  const gistField=document.querySelector('#sync-gist')?.value.trim()||'';
+  const gistId=extractGistId(gistField)||parsed.gistId||(parsed.token?'':extractGistId(raw));
+  if(!token){toast('先粘贴 GitHub token 或手机配对信息');return;}
+  if(!gistId){toast('填写同步空间 ID，或粘贴含同步 ID 的配对信息');return;}
   if(!navigator.onLine){syncError('当前离线，无法下载云端进度');return;}
   syncRuntime.busy=true;setSyncStatus('syncing');
   (async()=>{
@@ -543,7 +568,7 @@ function mobileNav(){
   return `<nav class="mobile-nav" aria-label="移动导航">${items.map(([key,label,ic])=>`<button data-view="${key}" class="${view===key?'active':''}">${icon(ic)}${label}</button>`).join('')}</nav>`;
 }
 function footer(){
-  return `<footer class="site-foot"><span>词间 · 本地保存，不上传学习记录</span><span>词库来源：烤鸭TV / Zoey 老师 · 个人学习使用</span></footer>`;
+  return `<footer class="site-foot"><span>词间 · 默认本机保存 · 可选私有 Gist 同步</span><span>词库来源：烤鸭TV / Zoey 老师 · 个人学习使用</span></footer>`;
 }
 function render(){
   clearWaitTimer();
@@ -1249,7 +1274,7 @@ function renderSettings(){
     </section>
     <section class="panel settings-wide">
       <h2>关于词间</h2>
-      <p class="about-copy">词间是一个只在本地运行的六级单词工作区：1500 个核心词按原表分组，配合 FSRS-6 间隔重复；做题遇到的新词随时录入，和原有词库一起复习。没有账号、没有云端、没有上传。<br><span class="faint">词库来源：烤鸭TV / Zoey 老师。Excel 原件保持不变。</span></p>
+      <p class="about-copy">词间是一个本地优先的六级单词工作区：1500 个核心词按原表分组，配合 FSRS-6 间隔重复；做题遇到的新词随时录入，和原有词库一起复习。默认数据只在本机；开启跨设备同步后，学习数据会写进你私有的 GitHub Gist，token 只保存在当前浏览器。<br><span class="faint">词库来源：烤鸭TV / Zoey 老师。Excel 原件保持不变。</span></p>
     </section>
   </div>`;
 }
@@ -1409,6 +1434,7 @@ document.addEventListener('click',event=>{
     case 'sync-push':pushSync();break;
     case 'sync-pull':pullSync();break;
     case 'sync-pair':copyPairLink();break;
+    case 'sync-phone':copyPhoneInfo();break;
     case 'sync-copy-gist':copyGistId();break;
     case 'sync-disconnect':disconnectSync();break;
     case 'sync-conflict':if(syncRuntime.conflict)openSyncConflict(syncRuntime.conflict);else toast('当前没有待处理的冲突');break;
@@ -1486,6 +1512,18 @@ document.addEventListener('input',event=>{
   if(event.target.id==='search'){query=event.target.value;page=1;renderRows();}
 });
 document.addEventListener('paste',event=>{
+  if(event.target.id==='sync-token'){
+    const text=event.clipboardData?.getData('text')||'';
+    if(/Token[：:]|同步\s*ID|gist=/.test(text)){
+      event.preventDefault();
+      const parsed=parsePhoneInfo(text);
+      if(parsed.token)event.target.value=parsed.token;
+      const gist=document.querySelector('#sync-gist');
+      if(parsed.gistId&&gist&&!gist.value)gist.value=parsed.gistId;
+      toast('已从配对信息填入 token 和同步 ID');
+    }
+    return;
+  }
   if(event.target.id!=='new-word')return;
   const text=event.clipboardData?.getData('text')||'';
   const parsed=parsePasted(text);
