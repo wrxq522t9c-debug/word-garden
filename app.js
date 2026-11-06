@@ -228,6 +228,7 @@ function syncPanelHtml(){
     ${syncIosNote()}
   </section>`;
 }
+async function syncLogin(token){try{return (await verifyGithubToken({token})).login||'';}catch{return '';}}
 function downloadLocalBackup(label){
   try{download(JSON.stringify(state,null,2),`词间-${label}-${today()}-${Date.now()}.json`);}catch{}
 }
@@ -267,9 +268,9 @@ function createSyncFromForm(){
   syncRuntime.busy=true;setSyncStatus('syncing');
   (async()=>{
     try{
-      const who=await verifyGithubToken({token});
+      const login=await syncLogin(token);
       const created=await createSyncGist({token,state,deviceId:syncConfig.deviceId,deviceName:syncConfig.deviceName});
-      syncConfig={...syncConfig,token,gistId:created.gistId,login:who.login,auto:true,lastRemoteAt:created.updatedAt,lastSyncAt:created.updatedAt,lastLocalAt:created.updatedAt,lastHash:fingerprint(state)};
+      syncConfig={...syncConfig,token,gistId:created.gistId,login,auto:true,lastRemoteAt:created.updatedAt,lastSyncAt:created.updatedAt,lastLocalAt:created.updatedAt,lastHash:fingerprint(state)};
       saveSyncConfig(syncConfig);syncRuntime.pendingGist='';
       syncRuntime.busy=false;setSyncStatus('synced');render();toast('同步空间已创建，本机进度已上传');
     }catch(error){syncError(error.message);}
@@ -290,12 +291,12 @@ function connectSyncFromForm(){
   syncRuntime.busy=true;setSyncStatus('syncing');
   (async()=>{
     try{
-      const who=await verifyGithubToken({token});
+      const login=await syncLogin(token);
       const remote=await fetchSyncGist({token,gistId});
       validateBackup(remote.state,baseWords);
       if(studied().length&&!confirm('将用云端进度替换本机进度。\n\n确定继续？会先自动下载本机备份。')){setSyncStatus('idle');return;}
       if(studied().length)downloadLocalBackup('同步连接前');
-      syncConfig={...syncConfig,token,gistId,login:who.login,auto:true};
+      syncConfig={...syncConfig,token,gistId,login,auto:true};
       saveSyncConfig(syncConfig);
       applyRemoteState(remote);
       syncRuntime.pendingGist='';
