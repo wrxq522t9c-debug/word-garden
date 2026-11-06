@@ -784,3 +784,4 @@ textarea:focus,input[type="text"]:focus,input:not([type]):focus{border-color:var
   .sync-setup,.sync-grid{grid-template-columns:1fr}
   .sync-panel .settings-actions .btn{flex:1 1 46%}
 }
+.sync-token-area{min-height:56px!important}

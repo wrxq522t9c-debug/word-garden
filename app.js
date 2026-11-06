@@ -187,7 +187,7 @@ function syncPanelHtml(){
       <div class="section-head"><div><h2>跨设备同步</h2><div class="sub">电脑和 iPhone 共用同一份学习进度</div></div><span class="chip ${info.cls}" id="sync-status-chip">${info.label}</span></div>
       <p class="form-sub">学习数据放在你的私有 GitHub Gist；token 只保存在本机浏览器，不写进学习备份。${pending?'已从配对链接读取同步空间，只需粘贴 token。':''}</p>
       <div class="sync-setup">
-        <div class="field"><label for="sync-token">GitHub token 或整段手机配对信息</label><input id="sync-token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ghp_... 或 github_pat_..."><a class="text-btn" href="https://github.com/settings/tokens/new?scopes=gist&description=word-garden-sync" target="_blank" rel="noopener">去 GitHub 创建 token ↗</a></div>
+        <div class="field"><label for="sync-token">GitHub token 或整段手机配对信息</label>${isIosDevice()?`<textarea id="sync-token" class="sync-token-area" rows="2" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="粘贴 token，或电脑上复制的整段配对信息"></textarea>`:`<input id="sync-token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ghp_... 或 github_pat_...">`}<a class="text-btn" href="https://github.com/settings/tokens/new?scopes=gist&description=word-garden-sync" target="_blank" rel="noopener">去 GitHub 创建 token ↗</a></div>
         <div class="field"><label for="sync-gist">${isIosDevice()?'同步空间 ID（粘贴配对信息后自动带入）':'同步空间 ID（已有就填；没有留空自动创建）'}</label><input id="sync-gist" value="${esc(syncRuntime.pendingGist||'')}" placeholder="32 位 ID；手机端可由配对链接自动带入" autocomplete="off" spellcheck="false"></div>
       </div>
       <div class="settings-actions">
