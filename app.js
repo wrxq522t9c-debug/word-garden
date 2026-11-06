@@ -188,11 +188,11 @@ function syncPanelHtml(){
       <p class="form-sub">学习数据放在你的私有 GitHub Gist；token 只保存在本机浏览器，不写进学习备份。${pending?'已从配对链接读取同步空间，只需粘贴 token。':''}</p>
       <div class="sync-setup">
         <div class="field"><label for="sync-token">GitHub token 或整段手机配对信息</label><input id="sync-token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ghp_... 或 github_pat_..."><a class="text-btn" href="https://github.com/settings/tokens/new?scopes=gist&description=word-garden-sync" target="_blank" rel="noopener">去 GitHub 创建 token ↗</a></div>
-        <div class="field"><label for="sync-gist">同步空间 ID（已有就填；没有留空自动创建）</label><input id="sync-gist" value="${esc(syncRuntime.pendingGist||'')}" placeholder="32 位 ID；手机端可由配对链接自动带入" autocomplete="off" spellcheck="false"></div>
+        <div class="field"><label for="sync-gist">${isIosDevice()?'同步空间 ID（粘贴配对信息后自动带入）':'同步空间 ID（已有就填；没有留空自动创建）'}</label><input id="sync-gist" value="${esc(syncRuntime.pendingGist||'')}" placeholder="32 位 ID；手机端可由配对链接自动带入" autocomplete="off" spellcheck="false"></div>
       </div>
       <div class="settings-actions">
         ${isIosDevice()
-          ? `<button class="btn primary" data-action="sync-connect" data-sync-action>${icon('download')} 用这个 ID 下载云端</button><button class="text-btn" data-action="sync-create" data-sync-action>在手机上新建同步空间（不推荐）</button>`
+          ? `<button class="btn primary" data-action="sync-connect" data-sync-action>${icon('download')} 用这个 ID 下载云端</button>`
           : `<button class="btn primary" data-action="sync-create" data-sync-action>创建同步空间并上传本机</button><button class="btn ghost" data-action="sync-connect" data-sync-action>用这个 ID 下载云端</button>`}
       </div>
       <div id="sync-error" class="form-error">${esc(syncRuntime.error||'')}</div>
