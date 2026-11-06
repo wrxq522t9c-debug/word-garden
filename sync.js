@@ -40,6 +40,51 @@ export function parsePayload(parsed){
   if(!parsed||typeof parsed!=='object'||parsed.app!=='word-garden'||!parsed.state||typeof parsed.state!=='object')throw new Error('这个 Gist 不是词间的同步数据。');
   return {state:parsed.state,updatedAt:Number(parsed.updatedAt)||0,device:String(parsed.device||''),deviceName:String(parsed.deviceName||'')};
 }
+function bytesToBase64(bytes){
+  let binary='';
+  const chunk=0x8000;
+  for(let i=0;i<bytes.length;i+=chunk)binary+=String.fromCharCode(...bytes.subarray(i,i+chunk));
+  return btoa(binary);
+}
+function base64ToBytes(text){
+  const binary=atob(String(text));
+  const bytes=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+  return bytes;
+}
+async function compressState(state){
+  const json=JSON.stringify(state);
+  if(typeof CompressionStream!=='function'||typeof Blob!=='function'||typeof Response!=='function')return {state};
+  try{
+    const stream=new Blob([json]).stream().pipeThrough(new CompressionStream('gzip'));
+    const buffer=await new Response(stream).arrayBuffer();
+    return {encoding:'gzip-base64',data:bytesToBase64(new Uint8Array(buffer))};
+  }catch{return {state};}
+}
+async function decompressState(data){
+  if(typeof DecompressionStream!=='function'||typeof Blob!=='function'||typeof Response!=='function')throw new Error('当前浏览器不支持解压同步数据。');
+  let bytes;
+  try{bytes=base64ToBytes(data);}catch{throw new Error('同步数据损坏。');}
+  try{
+    const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return JSON.parse(await new Response(stream).text());
+  }catch{throw new Error('同步数据解压失败。');}
+}
+// 2.2MB 的 reviewHistory 压缩后约 185KB，远低于 Gist 1MB 的读取截断线。
+export async function makeSyncPayload(state,deviceId,now=Date.now(),deviceName=''){
+  const encoded=await compressState(state);
+  const payload={app:'word-garden',schema:2,updatedAt:Number(now),device:String(deviceId||''),deviceName:String(deviceName||'')};
+  if(encoded.encoding){payload.encoding=encoded.encoding;payload.data=encoded.data;}else payload.state=encoded.state;
+  if(JSON.stringify(payload).length>950000)throw new Error('同步数据太大（压缩后仍超过 GitHub 限制）。');
+  return payload;
+}
+export async function decodeSyncPayload(parsed){
+  if(!parsed||typeof parsed!=='object'||parsed.app!=='word-garden')throw new Error('这个 Gist 不是词间的同步数据。');
+  let state=parsed.state;
+  if(parsed.encoding==='gzip-base64')state=await decompressState(parsed.data);
+  if(!state||typeof state!=='object')throw new Error('同步数据缺少学习进度。');
+  return {state,updatedAt:Number(parsed.updatedAt)||0,device:String(parsed.device||''),deviceName:String(parsed.deviceName||'')};
+}
 export function extractGistId(text){
   const value=String(text||'').trim();
   if(!value)return '';
@@ -64,7 +109,7 @@ export async function verifyGithubToken({token,fetchImpl=fetch,apiBase=API_BASE}
   return {login:data.login||''};
 }
 export async function createSyncGist({token,state,deviceId,deviceName='',fetchImpl=fetch,apiBase=API_BASE,now=Date.now()}){
-  const payload=makePayload(state,deviceId,now,deviceName);
+  const payload=await makeSyncPayload(state,deviceId,now,deviceName);
   const data=await call(apiBase,'/gists',{token,method:'POST',fetchImpl,body:{description:'词间 · 学习进度同步（私有）',public:false,files:{[GIST_FILE]:{content:JSON.stringify(payload)}}}});
   return {gistId:data.id,updatedAt:payload.updatedAt,payload};
 }
@@ -81,11 +126,11 @@ export async function fetchSyncGist({token,gistId,fetchImpl=fetch,apiBase=API_BA
   }
   let parsed;
   try{parsed=JSON.parse(content);}catch{throw new Error('同步文件不是有效的 JSON。');}
-  const payload=parsePayload(parsed);
+  const payload=await decodeSyncPayload(parsed);
   return {...payload,gistId:data.id,description:data.description||''};
 }
 export async function pushSyncGist({token,gistId,state,deviceId,deviceName='',fetchImpl=fetch,apiBase=API_BASE,now=Date.now()}){
-  const payload=makePayload(state,deviceId,now,deviceName);
+  const payload=await makeSyncPayload(state,deviceId,now,deviceName);
   await call(apiBase,`/gists/${encodeURIComponent(gistId)}`,{token,method:'PATCH',fetchImpl,body:{files:{[GIST_FILE]:{content:JSON.stringify(payload)}}}});
   return {updatedAt:payload.updatedAt,payload};
 }

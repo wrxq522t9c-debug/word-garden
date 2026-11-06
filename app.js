@@ -217,6 +217,7 @@ function syncPanelHtml(){
     <div class="settings-actions">
       <button class="btn primary" data-action="sync-push" data-sync-action>${icon('upload')} 上传本机</button>
       <button class="btn ghost" data-action="sync-pull" data-sync-action>${icon('download')} 从云端下载</button>
+      <button class="text-btn" data-action="sync-force-push">强制上传（覆盖云端）</button>
       ${syncRuntime.conflict?'<button class="btn ghost" data-action="sync-conflict">处理同步冲突</button>':''}
       <button class="btn ghost" data-action="sync-phone">${icon('link')} 复制手机配对信息</button>
       <button class="text-btn" data-action="sync-pair">复制配对链接</button>
@@ -317,6 +318,12 @@ function applyRemoteState(remote){
   applyTheme();view='home';feedback=null;revealed=false;lastAnswerUndo=null;page=1;
   render();
 }
+async function forcePushSync(){
+  if(!syncConfigured()){toast('先连接同步');return;}
+  if(syncRuntime.busy)return;
+  if(!confirm('将用本机进度覆盖云端。\n\n如果另一台设备也有未同步的修改，会被覆盖。确定继续？'))return;
+  await pushSync({force:true});
+}
 async function pushSync({force=false,auto=false}={}){
   if(!syncConfigured()){if(!auto)toast('先连接同步');return;}
   if(syncRuntime.busy)return;
@@ -371,7 +378,7 @@ async function autoSync(){
         if(view!=='study'&&!document.hidden)openSyncConflict(remote);else toast('云端有更新；学完这组后到设置处理同步');
         return;
       }
-      if(view==='study'||pendingSessions().length){syncRuntime.busy=false;setSyncStatus('idle');if(view!=='study')toast('云端有更新，学完当前组后可同步');return;}
+      if(view==='study'){syncRuntime.busy=false;setSyncStatus('idle');return;}
       applyRemoteState(remote);syncRuntime.busy=false;setSyncStatus('synced');toast('已同步另一台设备的最新进度');
       return;
     }
@@ -1442,6 +1449,7 @@ document.addEventListener('click',event=>{
     case 'sync-create':createSyncFromForm();break;
     case 'sync-connect':connectSyncFromForm();break;
     case 'sync-push':pushSync();break;
+    case 'sync-force-push':forcePushSync();break;
     case 'sync-pull':pullSync();break;
     case 'sync-pair':copyPairLink();break;
     case 'sync-phone':copyPhoneInfo();break;

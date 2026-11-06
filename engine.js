@@ -99,7 +99,7 @@ export function rateWord(previous,rating,now=new Date(),mode="review",options={}
   const card=isNew?createEmptyCard(now):toCard(p.card);
   const result=getScheduler(options.retention??0.9).next(card,now,rating);
   p.card=fromCard(result.card,previous?.card?.estimated); // 保留迁移估计来源，不冒充已校准
-  p.reviewHistory=[...(previous?.reviewHistory||[]),{time:now.getTime(),rating,mode,before:previous?.card?structuredClone(previous.card):null,after:structuredClone(p.card),fsrsLog:JSON.parse(JSON.stringify(result.log))}];
+  p.reviewHistory=[...(previous?.reviewHistory||[]),{time:now.getTime(),rating,mode}];
 
   // 跨天成功回忆（仅用于“已掌握”展示，不是 FSRS 历史）：记得记成功，忘记清零，费力保持。
   if(rating===1){p.streak=0;p.lastSuccess=null;p.mistakes=(p.mistakes||0)+1;}
@@ -354,7 +354,8 @@ export function validateBackup(s,words){
       if(!Array.isArray(p.reviewHistory))fail();
       for(const event of p.reviewHistory){
         if(!object(event)||!Number.isFinite(event.time)||!Number.isFinite(new Date(event.time).getTime())||![1,2,3].includes(event.rating)||!['learn','review','mistakes','day'].includes(event.mode))fail();
-        if(event.before!=null)checkCard(event.before);checkCard(event.after);
+        if(event.before!=null)checkCard(event.before);
+        if(event.after!=null)checkCard(event.after);
       }
     }
     if(s.version===1){
