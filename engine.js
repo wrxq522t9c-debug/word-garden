@@ -27,16 +27,18 @@ export function getScheduler(retention=0.9){
   return scheduler;
 }
 
-export const freshState=()=>({version:2,customWords:[],progress:{},logs:{},settings:{goal:0,autoSpeak:true,autoSpeakVersion:1},sessions:{},session:null,lastBackup:null});
+export const freshState=()=>({version:2,customWords:[],progress:{},logs:{},settings:{goal:0,autoSpeak:true,autoSpeakVersion:1,keySound:true,storyRate:0.8},sessions:{},session:null,lastBackup:null,storyLog:{},storyStats:{xp:0,completed:0,bestCombo:0}});
 
 // 新增设置项：旧状态/旧备份缺少时补默认值（幂等，不改动用户已做出的选择）。
-export const SETTINGS_DEFAULTS={dailyNew:30,dailyReview:200,retention:0.9,theme:'auto'};
+export const SETTINGS_DEFAULTS={dailyNew:30,dailyReview:200,retention:0.9,theme:'auto',keySound:true,storyRate:0.8};
 export function migrateSettings(state){
   const s=state.settings;let changed=false;
   if(!Number.isInteger(s.dailyNew)||s.dailyNew<0){s.dailyNew=s.goal>0?s.goal:SETTINGS_DEFAULTS.dailyNew;changed=true;}
   if(!Number.isInteger(s.dailyReview)||s.dailyReview<0){s.dailyReview=SETTINGS_DEFAULTS.dailyReview;changed=true;}
   if(!Number.isFinite(s.retention)||s.retention<0.7||s.retention>0.99){s.retention=SETTINGS_DEFAULTS.retention;changed=true;}
   if(!['auto','light','dark'].includes(s.theme)){s.theme=SETTINGS_DEFAULTS.theme;changed=true;}
+  if(typeof s.keySound!=='boolean'){s.keySound=SETTINGS_DEFAULTS.keySound;changed=true;}
+  if(!Number.isFinite(s.storyRate)||s.storyRate<0.5||s.storyRate>1.2){s.storyRate=SETTINGS_DEFAULTS.storyRate;changed=true;}
   return changed;
 }
 
@@ -344,6 +346,8 @@ export function validateBackup(s,words){
   if(s.settings.dailyReview!=null&&(!Number.isInteger(s.settings.dailyReview)||s.settings.dailyReview<0||s.settings.dailyReview>5000))fail();
   if(s.settings.retention!=null&&(!Number.isFinite(s.settings.retention)||s.settings.retention<0.7||s.settings.retention>0.99))fail();
   if(s.settings.theme!=null&&!['auto','light','dark'].includes(s.settings.theme))fail();
+  if(s.settings.keySound!=null&&typeof s.settings.keySound!=='boolean')fail();
+  if(s.settings.storyRate!=null&&(!Number.isFinite(s.settings.storyRate)||s.settings.storyRate<0.5||s.settings.storyRate>1.2))fail();
   for(const [id,p] of Object.entries(s.progress)){
     if(!ids.has(id)||!object(p))fail();
     for(const k of ['firstSeen','lastSeen','lastSuccess'])if(p[k]!=null&&!validDay(p[k]))fail();

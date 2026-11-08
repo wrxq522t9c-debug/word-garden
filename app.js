@@ -2,6 +2,8 @@ import {createPronouncer} from './audio.js';
 import {words as baseWords,readingBatch} from './words.js';
 import {learningPacks} from './packs.js';
 import {loadSyncConfig,saveSyncConfig,clearSyncConfig,isSyncConfigured,maskToken,fingerprint,extractGistId,verifyGithubToken,createSyncGist,fetchSyncGist,pushSyncGist} from './sync.js';
+import {ESSAY_TYPES,ESSAY_SAMPLES,STORY_PACKS,findStoryPack,findEssayType,findEssaySample,storyWordEntries,selectStoryWords,buildLocalStory,storyMeta,compareSentence,accuracyLabel} from './stories.js';
+import {setSoundEnabled,keyClick,keyBackspace,errorBuzz,successChime,comboChime,finishChime} from './sound.js';
 import {backupBeforeMigration,freshState,dayKey,addDays,rateWord,isMastered,dueWords,newWords,newWordsLearnedToday,spellingWords,validateBackup,normalizeAnswer,addCustomWord,findExistingWord,rememberSession,getSession,migratePreferences,migrateToV2,migrateSettings,advanceQueue,reviewPlan,weakWords,leechWords,forecastDue,retentionStats,previewRating,intervalLabel,captureAnswerUndo,undoAnswer,importReadingBatch,importLearningPacks,nextAnswerIndex,nextConsolidation,dueDayOf,isLearningCard,isDue} from './engine.js';
 
 const params=new URLSearchParams(location.search);
@@ -455,10 +457,14 @@ if(!blocked){
   const settingsChanged=migrateSettings(state);
   readingImport=importReadingBatch(baseWords,state,readingBatch);
   packImport=importLearningPacks(baseWords,state,learningPacks);
+  if(!state.storyLog||typeof state.storyLog!=='object'||Array.isArray(state.storyLog))state.storyLog={};
+  if(!state.storyStats||typeof state.storyStats!=='object'||Array.isArray(state.storyStats))state.storyStats={xp:0,completed:0,bestCombo:0};
   syncWords();
+  setSoundEnabled(state.settings.keySound!==false);
   if(preferencesChanged||scheduleChanged||settingsChanged||readingImport||packImport)save();
 }else{
   syncWords();
+  setSoundEnabled(state.settings.keySound!==false);
 }
 applyTheme();
 
@@ -546,7 +552,7 @@ function primaryAction(){
 }
 function navigate(next,opts={}){
   lastAnswerUndo=null;
-  pronunciation.stop();
+  pronunciation.stop();stopStorySpeech();
   view=next;
   feedback=null;
   revealed=false;
@@ -563,7 +569,7 @@ function navigate(next,opts={}){
 /* ---------- shell ---------- */
 function topbar(){
   const theme=resolvedTheme();
-  const navItems=[['home','今日',ICONS.home],['library','词库',ICONS.book],['mistakes','生词本',ICONS.layers],['stats','数据',ICONS.chart],['settings','设置',ICONS.settings]];
+  const navItems=[['home','今日',ICONS.home],['library','词库',ICONS.book],['mistakes','生词本',ICONS.layers],['story','故事',ICONS.spark],['stats','数据',ICONS.chart],['settings','设置',ICONS.settings]];
   return `<header class="topbar">
     <a class="brand" href="#home" data-view="home" aria-label="词间首页">
       <span class="logo">词</span>
@@ -581,7 +587,7 @@ function topbar(){
   </header>`;
 }
 function mobileNav(){
-  const items=[['home','今日','home'],['library','词库','book'],['mistakes','生词本','layers'],['stats','数据','chart'],['settings','设置','settings']];
+  const items=[['home','今日','home'],['library','词库','book'],['mistakes','生词本','layers'],['story','故事','spark'],['stats','数据','chart'],['settings','设置','settings']];
   return `<nav class="mobile-nav" aria-label="移动导航">${items.map(([key,label,ic])=>`<button data-view="${key}" class="${view===key?'active':''}">${icon(ic)}${label}</button>`).join('')}</nav>`;
 }
 function footer(){
@@ -592,7 +598,8 @@ function render(){
   applyTheme();
   if(blocked&&!['library','mistakes','stats','settings'].includes(view))view='home';
   if(view==='study'){renderStudy();return;}
-  const content={home:renderHome,library:renderLibrary,mistakes:renderLibrary,stats:renderStats,settings:renderSettings}[view]||renderHome;
+  if(view==='story'){renderStory();return;}
+  const content={home:renderHome,library:renderLibrary,mistakes:renderLibrary,story:renderStory,stats:renderStats,settings:renderSettings}[view]||renderHome;
   app.innerHTML=`<div class="shell">${topbar()}${blocked?banner():''}<main class="container">${content()}</main>${footer()}</div>${mobileNav()}`;
   if(view==='library'||view==='mistakes')renderRows();
 }
@@ -644,6 +651,7 @@ function renderHome(){
         <p class="lede">${sub}</p>
         <div class="hero-actions">
           ${action?`<button class="btn primary" data-action="start" data-mode="${action.mode}">${action.label} · ${action.count} 词 ${icon('arrowRight')}</button>`:`<button class="btn primary" disabled>今天已完成 ${icon('check')}</button>`}
+          <button class="btn ghost" data-view="story">${icon('spark')} 故事听写</button>
           <button class="btn ghost" data-action="add-word">${icon('plus')} 录入做题新词</button>
         </div>
         ${pendings.length?`<div class="resume-row">${pendings.map(p=>`<button class="resume-chip" data-action="resume-mode" data-mode="${p.mode}"><b>${esc(p.title)}</b><span>${p.index + 1} / ${p.total}</span><span class="go">${icon('arrowRight')}</span></button>`).join('')}</div>`:''}
@@ -666,6 +674,7 @@ function renderHome(){
     ${taskCard('weak','生词巩固','layers',weak.length,'个薄弱词',`${leeches.length} 个顽固词反复遗忘`,0,weak.length>0,'mistakes',weak.length?'巩固错词':'暂无错词')}
     ${taskCard('spell','拼写练习','keyboard',spell.length,'个待拼写','把认识的词写出来',0,spell.length>0,'spell',spell.length?'开始拼写':'暂无任务')}
   </section>
+  ${storyStripHtml()}
   ${reviewCap>0&&plan.backlog>0?`<p class="task-note">按每日 ${reviewCap} 个的复习上限，今天还有 <b>${plan.backlog}</b> 个到期词排在后面。可在设置里调整上限，或明天继续。</p>`:''}
   <div class="columns">
     <section class="panel">
@@ -709,6 +718,299 @@ function recentWordsHtml(){
       <span class="chip ${s.cls==='new'?'':s.cls}">${s.label}</span>
     </button>`;
   }).join('')}</div>`;
+}
+
+
+/* ---------- story lab ---------- */
+let storyRun=null;
+let storyTab='stories';
+
+function storyStreak(){
+  let d=today(),n=0;
+  if(!state.storyLog?.[d]?.completed)d=addDays(d,-1);
+  while(state.storyLog?.[d]?.completed){n++;d=addDays(d,-1);}
+  return n;
+}
+function storyCompletedCount(){
+  return Object.values(state.storyLog||{}).filter(x=>x?.completed).length;
+}
+function storySoundOn(){return state.settings.keySound!==false;}
+function storyRateValue(){return Number(state.settings.storyRate)||0.8;}
+function storyVoice(){
+  if(!('speechSynthesis' in window))return null;
+  const voices=window.speechSynthesis.getVoices().filter(v=>/^en(-|_)/i.test(v.lang));
+  return voices.find(v=>/premium|enhanced|natural|Samantha|Daniel|Alex/i.test(v.name))||voices[0]||null;
+}
+function stopStorySpeech(){
+  try{window.speechSynthesis?.cancel();}catch{}
+}
+function speakStory(text,rate=storyRateValue()){
+  stopStorySpeech();
+  if(!('speechSynthesis' in window)){toast('当前浏览器不支持朗读，请换浏览器或联网后重试。');return;}
+  const u=new SpeechSynthesisUtterance(String(text||''));
+  u.lang='en-US';u.rate=Math.max(0.5,Math.min(1.1,Number(rate)||0.8));u.pitch=1;u.volume=1;
+  const voice=storyVoice();if(voice)u.voice=voice;
+  u.onerror=e=>{if(!['interrupted','canceled'].includes(e.error))toast('这句没读出来，再点一次播放。');};
+  window.speechSynthesis.speak(u);
+}
+function storyTargetWords(sentence,pack){
+  const names=sentence?.targets?.length?sentence.targets:[];
+  const map=new Map(words.map(w=>[w.word.trim().toLowerCase(),w]));
+  return names.map(name=>map.get(String(name||'').trim().toLowerCase())).filter(Boolean);
+}
+function storyTargetChips(sentence,pack){
+  const list=storyTargetWords(sentence,pack);
+  if(!list.length)return '';
+  return `<div class="story-targets">${list.map(w=>`<span class="story-target"><b>${esc(w.word)}</b><small>${esc(w.definition)}</small></span>`).join('')}</div>`;
+}
+function storyCoverHtml(pack,index=1){
+  const meta=storyMeta(pack);
+  return `<div class="story-cover">
+    <span class="story-cover-no">${String(index).padStart(2,'0')}</span>
+    <div class="story-cover-mid"><span>${esc(pack.kicker||'STORY')}</span><b>${esc(pack.title)}</b><small>${esc(pack.theme||'')}</small></div>
+    <div class="story-cover-meta"><span>${meta.sentences} 句</span><span>≈ ${meta.minutes} 分钟</span></div>
+  </div>`;
+}
+function renderStory(){
+  if(storyRun?.screen==='play'){renderStoryPlay();return;}
+  if(storyRun?.screen==='summary'){renderStorySummary();return;}
+  renderStoryHome();
+}
+function renderStoryHome(){
+  if(storyTab==='templates'){renderStoryTemplates();return;}
+  const pack=STORY_PACKS[0];
+  const log=state.storyLog?.[today()];
+  const done=!!log?.completed;
+  const local=buildLocalStory(words,state,{isDueFn:isDue});
+  const stats=state.storyStats||{};
+  app.innerHTML=`<div class="shell">${topbar()}${blocked?banner():''}<main class="container story-home">
+    <div class="page-head story-head">
+      <div><p class="eyebrow">STORY LAB · 听写工坊</p><h1>把今天背的词，<br>编成一个小故事。</h1><p>不是孤立地记单词，而是在完整句子里听见它、写出来。每天 8 句，约 3 分钟。</p></div>
+      <div class="story-head-actions">
+        <button class="btn ghost" data-action="toggle-sound">${icon(storySoundOn()?'volume':'x')} ${storySoundOn()?'键盘音效开':'键盘音效关'}</button>
+        <button class="btn ghost" data-action="story-tab" data-tab="templates">${icon('book')} 作文模板</button>
+      </div>
+    </div>
+    <section class="story-feature">
+      <div class="story-feature-copy">
+        <span class="chip accent">${done?'TODAY · 已完成':'TODAY\'S STORY'}</span>
+        <h2>${esc(pack.title)}</h2>
+        <p>${esc(pack.intro)}</p>
+        <div class="story-chips">${(pack.targets||[]).slice(0,8).map(t=>`<span>${esc(t)}</span>`).join('')}</div>
+        <div class="story-actions">
+          <button class="btn primary" data-action="story-start" data-kind="pack" data-id="${esc(pack.id)}">${done?'再听一遍':'开始今天的听写'} ${icon('arrowRight')}</button>
+          <button class="btn ghost" data-action="story-start" data-kind="local">用今天的词拼一篇</button>
+        </div>
+      </div>
+      ${storyCoverHtml(pack,1)}
+    </section>
+    <div class="story-metrics">
+      <div><b>${storyStreak()}</b><span>故事连续天数</span></div>
+      <div><b>${storyCompletedCount()}</b><span>完成篇数</span></div>
+      <div><b>${Number(stats.xp)||0}</b><span>故事 XP</span></div>
+      <div><b>${Number(stats.bestCombo)||0}</b><span>最高连击</span></div>
+    </div>
+    <div class="columns story-columns">
+      <section class="panel">
+        <div class="section-head"><div><h2>今天怎么练</h2><div class="sub">先听，再写，最后看错在哪</div></div><span class="chip">${done?'已完成':'8 句'}</span></div>
+        <div class="story-modes">
+          <button class="story-mode" data-action="story-start" data-kind="pack" data-id="${esc(pack.id)}"><span class="story-mode-icon">${icon('spark')}</span><span><b>故事听写</b><small>用你背过的词写成的 8 句小故事</small></span>${icon('arrowRight')}</button>
+          <button class="story-mode" data-action="story-start" data-kind="local" ${local?'':'disabled'}><span class="story-mode-icon">${icon('refresh')}</span><span><b>用今天的词拼一篇</b><small>${local?'从到期/新词里取例句，自动拼装':'今天的词还不够 4 个有例句的词'}</small></span>${icon('arrowRight')}</button>
+          <button class="story-mode" data-action="story-tab" data-tab="templates"><span class="story-mode-icon">${icon('book')}</span><span><b>模板作文听写</b><small>用六级写作模板的完整范文练句子</small></span>${icon('arrowRight')}</button>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="section-head"><div><h2>为什么这样更记得住</h2><div class="sub">把词放回语境，而不是只看看释义</div></div></div>
+        <div class="story-why">
+          <div><span>01</span><p><b>听得见</b>每个词都在完整句子里，语音由慢到快。</p></div>
+          <div><span>02</span><p><b>写得出</b>逐词比对，漏掉哪个冠词/介词一目了然。</p></div>
+          <div><span>03</span><p><b>用得上</b>故事和模板作文的句子，可以直接搬进写作。</p></div>
+        </div>
+        <p class="data-note">故事是“额外练习”，不会自动改 FSRS 排期；听写错的词可以一键拉去复习。</p>
+      </section>
+    </div>
+  </main>${footer()}</div>${mobileNav()}`;
+}
+function renderStoryTemplates(){
+  const sample=ESSAY_SAMPLES[0];
+  app.innerHTML=`<div class="shell">${topbar()}${blocked?banner():''}<main class="container story-home">
+    <div class="page-head story-head">
+      <div><p class="eyebrow">WRITING TEMPLATES · 六级写作</p><h1>先背骨架，<br>再往里面填词。</h1><p>来自你上传的六级写作模板：四种题型、开头/主体/结尾句，以及一篇完整范文听写。</p></div>
+      <div class="story-head-actions"><button class="btn ghost" data-action="story-tab" data-tab="stories">${icon('arrowLeft')} 回故事</button></div>
+    </div>
+    ${sample?`<section class="story-feature template-feature"><div class="story-feature-copy"><span class="chip accent">FULL SAMPLE · 2023-12</span><h2>${esc(sample.title)}</h2><p>${esc(sample.source)} · ${sample.sentences.length} 句 · 约 4 分钟。模板不是拿来背空的，先用一篇完整范文把句型听熟。</p><div class="story-actions"><button class="btn primary" data-action="story-start" data-kind="essay" data-id="${esc(sample.id)}">听写这篇范文 ${icon('arrowRight')}</button></div></div><div class="story-cover template-cover"><span class="story-cover-no">01</span><div class="story-cover-mid"><span>OPINION ESSAY</span><b>${esc(sample.title)}</b><small>观点 + 论证型</small></div><div class="story-cover-meta"><span>${sample.sentences.length} 句</span><span>≈ 4 分钟</span></div></div></section>`:''}
+    <div class="template-grid">${ESSAY_TYPES.map(type=>{
+      const sampleFor=ESSAY_SAMPLES.find(x=>x.typeId===type.id);
+      return `<section class="template-card">
+        <div class="template-head"><span class="chip">${esc(type.tag)}</span><span class="faint">${type.frames.length} 个句型</span></div>
+        <h2>${esc(type.title)}</h2>
+        <ol class="template-structure">${type.structure.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>
+        <details><summary>展开模板句</summary><div class="template-frames">${type.frames.map(f=>`<div><span>${esc(f.part)}</span><p>${esc(f.en)}</p></div>`).join('')}</div></details>
+        ${sampleFor?`<button class="text-btn" data-action="story-start" data-kind="essay" data-id="${esc(sampleFor.id)}">听写对应范文 ${icon('arrowRight')}</button>`:''}
+      </section>`;
+    }).join('')}</div>
+    <p class="data-note">模板来源于你上传的《六级写作模板.pdf》。当前先内置观点+论证型的完整范文；其余题型可以先看句型，后续可以把你的更多范文加进来。</p>
+  </main>${footer()}</div>${mobileNav()}`;
+}
+function storyDataFor(kind,id){
+  if(kind==='pack')return findStoryPack(id)||STORY_PACKS[0];
+  if(kind==='essay'){
+    const sample=findEssaySample(id)||ESSAY_SAMPLES[0];
+    if(!sample)return null;
+    return {id:sample.id,title:sample.title,kicker:'TEMPLATE ESSAY',theme:sample.source,intro:'把模板范文逐句听写，句型和内容一起记住。',templateId:sample.typeId,xp:140,targets:[],sentences:sample.sentences,essay:''};
+  }
+  if(kind==='local')return buildLocalStory(words,state,{isDueFn:isDue});
+  return null;
+}
+function startStory(kind,id){
+  if(blocked){toast('请先恢复有效备份，再开始故事听写。');return;}
+  const data=storyDataFor(kind,id);
+  if(!data){toast('这个词数还不够拼一篇，先学几个新词吧。');return;}
+  storyRun={screen:'play',kind,data,index:0,checked:false,answer:'',result:null,results:[],combo:0,maxCombo:0,xp:0,startedAt:Date.now()};
+  view='story';
+  renderStory();
+  setTimeout(()=>playStorySentence(),260);
+}
+function playStorySentence(rate=storyRateValue()){
+  const s=storyRun?.data?.sentences?.[storyRun.index];
+  if(s)speakStory(s.en,rate);
+}
+function storyDiffHtml(result){
+  if(!result)return '';
+  return `<div class="story-feedback ${result.exact?'ok':'warn'}">
+    <div class="story-feedback-head"><b>${result.exact?'完美听写':accuracyLabel(result.ratio)}</b><span>${Math.round(result.ratio*100)}% · ${result.correct}/${result.total} 词</span></div>
+    <div class="story-diff-line"><span class="faint">你的输入</span><p>${result.actualParts.length?result.actualParts.map(x=>`<span class="${x.ok?'ok':'extra'}">${esc(x.text)}</span>`).join(' '):'<span class="faint">（空）</span>'}</p></div>
+    <div class="story-diff-line"><span class="faint">正确句子</span><p>${result.expectedParts.map(x=>`<span class="${x.ok?'ok':'miss'}">${esc(x.text)}</span>`).join(' ')}</p></div>
+    ${result.missing.length?`<p class="story-missing">漏掉/写错：<b>${result.missing.map(esc).join(' · ')}</b></p>`:''}
+  </div>`;
+}
+function checkStoryAnswer(){
+  if(!storyRun||storyRun.checked)return;
+  const input=document.querySelector('#story-answer');
+  const answer=input?.value??'';
+  const s=storyRun.data.sentences[storyRun.index];
+  const result=compareSentence(answer,s.en);
+  result.targets=storyTargetWords(s,storyRun.data).map(w=>w.word);
+  storyRun.answer=answer;storyRun.result=result;storyRun.checked=true;
+  const good=result.ratio>=0.8;
+  storyRun.combo=good?storyRun.combo+1:0;
+  storyRun.maxCombo=Math.max(storyRun.maxCombo,storyRun.combo);
+  storyRun.xp+=Math.round(result.ratio*20)+(result.exact?10:0)+(good&&storyRun.combo>=3?5:0);
+  storyRun.results.push({ratio:result.ratio,exact:result.exact,correct:result.correct,total:result.total,answer,targets:result.targets,expected:s.en});
+  if(result.ratio>=0.85)successChime();else if(result.ratio<0.55)errorBuzz();
+  if(good&&storyRun.combo>=2)comboChime(storyRun.combo);
+  renderStory();
+}
+function nextStorySentence(){
+  if(!storyRun)return;
+  if(storyRun.index>=storyRun.data.sentences.length-1){finishStory();return;}
+  storyRun.index++;storyRun.checked=false;storyRun.answer='';storyRun.result=null;
+  renderStory();
+  setTimeout(()=>playStorySentence(),220);
+}
+function finishStory(){
+  if(!storyRun)return;
+  const total=storyRun.results.reduce((n,r)=>n+r.total,0);
+  const correct=storyRun.results.reduce((n,r)=>n+r.correct,0);
+  const accuracy=total?correct/total:0;
+  const missed=[...new Set(storyRun.results.filter(r=>!r.exact).flatMap(r=>r.targets||[]))];
+  storyRun.screen='summary';
+  storyRun.summary={accuracy,correct,total,missed};
+  const key=today();
+  const prev=state.storyLog?.[key];
+  state.storyLog||={};
+  state.storyLog[key]={completed:true,storyId:storyRun.data.id,title:storyRun.data.title,accuracy,combo:storyRun.maxCombo,xp:(prev?.xp||0)+storyRun.xp,at:Date.now()};
+  state.storyStats||={xp:0,completed:0,bestCombo:0};
+  state.storyStats.xp=(Number(state.storyStats.xp)||0)+storyRun.xp;
+  state.storyStats.completed=(Number(state.storyStats.completed)||0)+1;
+  state.storyStats.bestCombo=Math.max(Number(state.storyStats.bestCombo)||0,storyRun.maxCombo);
+  save();finishChime();confetti();renderStory();
+}
+function renderStoryPlay(){
+  const run=storyRun,data=run.data,s=data.sentences[run.index];
+  if(!s){finishStory();return;}
+  const result=run.result;
+  const pct=Math.round(run.index/Math.max(1,data.sentences.length)*100);
+  app.innerHTML=`<div class="shell story-shell">${topbar()}<main class="container story-play">
+    <div class="story-play-top">
+      <button class="text-btn" data-action="story-exit">${icon('arrowLeft')} 退出</button>
+      <div class="story-progress"><i style="width:${pct}%"></i></div>
+      <span class="story-count">${run.index+1} / ${data.sentences.length}</span>
+      <button class="icon-btn" data-action="toggle-sound" aria-label="键盘音效">${icon(storySoundOn()?'volume':'x')}</button>
+    </div>
+    <div class="story-play-meta"><span class="chip">${esc(data.kicker||'STORY')}</span><span>${esc(data.title)}</span><span class="story-combo">${icon('flame')} ${run.combo} 连击</span></div>
+    <section class="story-stage">
+      <p class="story-stage-hint">${esc(s.zh||'听清这一句，把它写下来。')}</p>
+      ${storyTargetChips(s,data)}
+      <div class="story-audio-row">
+        <button class="btn primary" data-action="story-play">${icon('volume')} 播放原句</button>
+        <button class="btn ghost" data-action="story-play-slow">慢速 0.6×</button>
+        <span class="story-rate">语速 ${storyRateValue().toFixed(2)}× · 可调</span>
+      </div>
+      <form id="story-form" class="story-form" autocomplete="off">
+        <input id="story-answer" data-key-sound="on" value="${esc(run.answer)}" ${run.checked?'disabled':''} placeholder="听一句，写一句…" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="输入听到的英文句子">
+        <button class="btn ${run.checked?'primary':'primary'}" type="submit">${run.checked?'下一句':'检查听写'} ${icon(run.checked?'arrowRight':'check')}</button>
+      </form>
+      ${run.checked?`${storyDiffHtml(result)}<div class="story-actions story-after"><button class="btn primary" data-action="story-next">${run.index>=data.sentences.length-1?'完成这篇':'下一句'} ${icon('arrowRight')}</button><button class="btn ghost" data-action="story-play">${icon('volume')} 再听一遍</button>${result.exact?'<span class="story-perfect">+10 完美分</span>':''}</div>`:`<div class="story-before-hint"><span>Enter 检查</span><span>先听两遍，再下笔</span><span>错词会自动汇总</span></div>`}
+    </section>
+    <p class="story-foot-note">键盘音效随打字触发；如果觉得吵，右上角可关。故事听写只记录 XP，不自动改 FSRS。</p>
+  </main></div>${mobileNav()}`;
+  if(!run.checked)requestAnimationFrame(()=>document.querySelector('#story-answer')?.focus());
+  else requestAnimationFrame(()=>document.querySelector('[data-action="story-next"]')?.focus());
+}
+function renderStorySummary(){
+  const run=storyRun,sum=run.summary||{accuracy:0,missed:[]};
+  app.innerHTML=`<div class="shell story-shell">${topbar()}<main class="container story-play">
+    <section class="story-summary">
+      <div class="summary-check">${icon('check')}</div>
+      <p class="eyebrow">STORY COMPLETE · ONE MORE STEP</p>
+      <h1>${sum.accuracy>=0.9?'这一篇，听得很稳。':'这一篇，已经把词用起来了。'}</h1>
+      <p class="lede">${run.data.title} · ${run.data.sentences.length} 句。${sum.missed.length?'把没听清的词再带走练一遍，明天会更顺。':'几乎没有漏词，继续保持。'}</p>
+      <div class="story-summary-stats">
+        <div><b>${Math.round(sum.accuracy*100)}%</b><span>整篇准确率</span></div>
+        <div><b>${run.maxCombo}</b><span>最高连击</span></div>
+        <div><b>+${run.xp}</b><span>本次 XP</span></div>
+      </div>
+      ${sum.missed.length?`<div class="story-missed"><span>需要再看一眼的词</span><div>${sum.missed.map(w=>`<b>${esc(w)}</b>`).join('')}</div></div>`:''}
+      <div class="story-summary-actions">
+        ${sum.missed.length?`<button class="btn primary" data-action="story-misses">${icon('refresh')} 练一遍错词</button>`:''}
+        <button class="btn ${sum.missed.length?'ghost':'primary'}" data-action="story-retry">${icon('refresh')} 再听一遍</button>
+        <button class="btn ghost" data-action="story-start" data-kind="local">换一篇拼装</button>
+        <button class="btn ghost" data-action="story-home">回故事首页</button>
+      </div>
+    </section>
+  </main></div>${mobileNav()}`;
+}
+function storyPracticeMisses(){
+  const sum=storyRun?.summary;
+  if(!sum?.missed?.length){toast('这一篇没有漏词，去挑战下一篇吧。');return;}
+  const map=new Map(words.map(w=>[w.word.trim().toLowerCase(),w]));
+  const ids=[...new Set(sum.missed.map(name=>map.get(String(name||'').trim().toLowerCase())?.id).filter(Boolean))];
+  if(!ids.length){toast('这些词暂时不在词库里。');return;}
+  rememberSession(state);
+  state.session={mode:'day',title:'故事错词',queue:ids,index:0,total:ids.length,correct:0,date:today(),retries:{}};
+  save();navigate('study');autoSpeak();
+}
+function confetti(){
+  const colors=['#8b7cff','#38d6c0','#ffbd59','#ff6f8e','#f3f5fb'];
+  for(let i=0;i<40;i++){
+    const el=document.createElement('i');
+    el.className='confetti-piece';
+    el.style.left=`${Math.random()*100}%`;
+    el.style.background=colors[i%colors.length];
+    el.style.animationDelay=`${Math.random()*0.35}s`;
+    el.style.transform=`rotate(${Math.random()*180}deg)`;
+    document.body.append(el);
+    setTimeout(()=>el.remove(),2800);
+  }
+}
+function storyStripHtml(){
+  const pack=STORY_PACKS[0],done=!!state.storyLog?.[today()]?.completed;
+  return `<button class="story-strip" data-view="story" type="button">
+    <div class="story-strip-icon">${icon('spark')}</div>
+    <div class="story-strip-copy"><span class="eyebrow">STORY LAB · 今天的故事</span><b>${esc(pack.title)}</b><small>${done?'今天已完成 · 再听一遍巩固':'用你背过的词写成的 8 句小故事 · 约 3 分钟'}</small></div>
+    <span class="story-strip-cta">${done?'再听一遍':'去听写'} ${icon('arrowRight')}</span>
+  </button>`;
 }
 
 /* ---------- library ---------- */
@@ -1265,7 +1567,15 @@ function renderSettings(){
         <div class="setting-copy"><span class="setting-label">词典发音</span><small>优先使用有道在线词典，失败时使用系统语音。</small></div>
         <select data-setting="accent">${[['us','美式'],['uk','英式']].map(([v,t])=>`<option value="${v}" ${(state.settings.accent||'us')===v?'selected':''}>${t}</option>`).join('')}</select>
       </div>
-      <div class="settings-actions"><button class="btn ghost tiny" data-action="preview-voice">${icon('volume')} 试听 beautiful</button></div>
+      <div class="setting-row">
+        <div class="setting-copy"><span class="setting-label">故事语速</span><small>故事听写的默认语速；进入后还可以点“慢速 0.6×”。</small></div>
+        <select data-setting="storyRate">${[[0.7,'0.70× · 慢'], [0.8,'0.80× · 推荐'], [0.9,'0.90× · 稍快']].map(([v,t])=>`<option value="${v}" ${Number(state.settings.storyRate)===v?'selected':''}>${t}</option>`).join('')}</select>
+      </div>
+      <div class="setting-row">
+        <div class="setting-copy"><span class="setting-label">键盘敲击音效</span><small>故事听写和拼写输入时触发；Web Audio 合成，不加载音频文件。</small></div>
+        <label class="switch"><input id="key-sound" type="checkbox" data-setting="keySound" ${state.settings.keySound!==false?'checked':''}><span></span></label>
+      </div>
+      <div class="settings-actions"><button class="btn ghost tiny" data-action="preview-voice">${icon('volume')} 试听 beautiful</button><button class="btn ghost tiny" data-action="preview-sound">${icon('keyboard')} 试听键盘音效</button></div>
       <div class="data-note">朗读时会向有道发送当前单词；词库和学习记录不会上传。</div>
     </section>
     <section class="panel">
@@ -1446,6 +1756,24 @@ document.addEventListener('click',event=>{
     case 'close-add':document.querySelector('#add-word-dialog').close();break;
     case 'view-existing':document.querySelector('#add-word-dialog').close();detail(id);break;
     case 'start':start(target.dataset.mode);break;
+    case 'story-start':startStory(target.dataset.kind,target.dataset.id);break;
+    case 'story-tab':storyRun=null;storyTab=target.dataset.tab||'stories';view='story';render();break;
+    case 'story-play':playStorySentence();break;
+    case 'story-play-slow':playStorySentence(Math.max(0.55,storyRateValue()-0.2));break;
+    case 'story-next':nextStorySentence();break;
+    case 'story-exit':case 'story-home':storyRun=null;storyTab='stories';view='story';render();break;
+    case 'story-retry':{
+      if(!storyRun?.data)break;
+      const data=storyRun.data;storyRun={screen:'play',kind:storyRun.kind||'pack',data,index:0,checked:false,answer:'',result:null,results:[],combo:0,maxCombo:0,xp:0,startedAt:Date.now()};
+      renderStory();setTimeout(()=>playStorySentence(),220);break;
+    }
+    case 'story-misses':storyPracticeMisses();break;
+    case 'toggle-sound':{
+      state.settings.keySound=!storySoundOn();save();setSoundEnabled(state.settings.keySound);
+      toast(state.settings.keySound?'键盘音效已打开':'键盘音效已关闭');
+      if(view==='story')renderStory();
+      break;
+    }
     case 'sync-create':createSyncFromForm();break;
     case 'sync-connect':connectSyncFromForm();break;
     case 'sync-push':pushSync();break;
@@ -1521,11 +1849,23 @@ document.addEventListener('click',event=>{
     case 'import':document.querySelector('#import-file').click();break;
     case 'raw-export':download(localStorage.getItem(KEY)||'','词间原始数据.json');break;
     case 'preview-voice':pronunciation.speak('beautiful',state.settings.accent||'us');break;
+    case 'preview-sound':keyClick();setTimeout(()=>keyClick(),120);setTimeout(()=>successChime(),260);break;
     case 'show-shortcuts':openShortcuts();break;
     case 'close-shortcuts':document.querySelector('#shortcuts-dialog').close();break;
   }
 });
 document.addEventListener('input',event=>{
+  if(event.target.id==='story-answer'){
+    if(storyRun)storyRun.answer=event.target.value;
+    if(state.settings.keySound!==false&&!event.isComposing){
+      const type=event.inputType||'';
+      if(type.startsWith('delete'))keyBackspace();else if(type.startsWith('insert')&&!type.includes('Paste'))keyClick();
+    }
+  }
+  if(event.target.id==='spell-answer'&&state.settings.keySound!==false&&!event.isComposing){
+    const type=event.inputType||'';
+    if(type.startsWith('insert')&&!type.includes('Paste'))keyClick();else if(type.startsWith('delete'))keyBackspace();
+  }
   if(event.target.id==='new-word')checkNewWord();
   if(event.target.id==='search'){query=event.target.value;page=1;renderRows();}
 });
@@ -1566,8 +1906,9 @@ document.addEventListener('change',event=>{
   if(el.dataset?.setting){
     const key=el.dataset.setting;
     let value=el.type==='checkbox'?el.checked:el.value;
-    if(['dailyNew','dailyReview','retention'].includes(key))value=Number(value);
+    if(['dailyNew','dailyReview','retention','storyRate'].includes(key))value=Number(value);
     state.settings[key]=value;
+    if(key==='keySound')setSoundEnabled(!!value);
     save();
     if(key==='retention'||key==='dailyNew'||key==='dailyReview')toast('设置已保存');
     return;
@@ -1594,6 +1935,11 @@ document.addEventListener('change',event=>{
   }
 });
 document.addEventListener('submit',event=>{
+  if(event.target.id==='story-form'){
+    event.preventDefault();
+    if(storyRun?.checked)nextStorySentence();else checkStoryAnswer();
+    return;
+  }
   if(event.target.id==='add-word-form'){event.preventDefault();submitNewWord();return;}
   if(event.target.id==='spell-form'){
     event.preventDefault();
