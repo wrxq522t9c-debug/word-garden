@@ -2,7 +2,7 @@ import {createPronouncer} from './audio.js';
 import {words as baseWords,readingBatch} from './words.js';
 import {learningPacks} from './packs.js';
 import {loadSyncConfig,saveSyncConfig,clearSyncConfig,isSyncConfigured,maskToken,fingerprint,extractGistId,verifyGithubToken,createSyncGist,fetchSyncGist,pushSyncGist} from './sync.js';
-import {ESSAY_TYPES,ESSAY_SAMPLES,STORY_PACKS,findStoryPack,findEssayType,findEssaySample,storyWordEntries,selectStoryWords,buildLocalStory,storyMeta,compareSentence,accuracyLabel} from './stories.js';
+import {ESSAY_TYPES,ESSAY_SAMPLES,STORY_PACKS,findStoryPack,findEssayType,findEssaySample,storyWordEntries,selectStoryWords,buildLocalStory,storyMeta,compareSentence,accuracyLabel,tokenizeSentence} from './stories.js';
 import {setSoundEnabled,keyClick,keyBackspace,errorBuzz,successChime,comboChime,finishChime} from './sound.js';
 import {backupBeforeMigration,freshState,dayKey,addDays,rateWord,isMastered,dueWords,newWords,newWordsLearnedToday,spellingWords,validateBackup,normalizeAnswer,addCustomWord,findExistingWord,rememberSession,getSession,migratePreferences,migrateToV2,migrateSettings,advanceQueue,reviewPlan,weakWords,leechWords,forecastDue,retentionStats,previewRating,intervalLabel,captureAnswerUndo,undoAnswer,importReadingBatch,importLearningPacks,nextAnswerIndex,nextConsolidation,dueDayOf,isLearningCard,isDue} from './engine.js';
 
@@ -736,6 +736,12 @@ function storyCompletedCount(){
 }
 function storySoundOn(){return state.settings.keySound!==false;}
 function storyRateValue(){return Number(state.settings.storyRate)||0.8;}
+function storyTokens(sentence){return tokenizeSentence(sentence?.en||'');}
+function emptyStoryAnswers(sentence){return storyTokens(sentence).map(()=>'');}
+function focusStorySlot(index){
+  const el=document.querySelector(`.word-slot[data-slot="${index}"]`);
+  if(el){el.focus();try{el.setSelectionRange(el.value.length,el.value.length);}catch{}}
+}
 function storyVoice(){
   if(!('speechSynthesis' in window))return null;
   const voices=window.speechSynthesis.getVoices().filter(v=>/^en(-|_)/i.test(v.lang));
@@ -866,7 +872,7 @@ function startStory(kind,id){
   if(blocked){toast('请先恢复有效备份，再开始故事听写。');return;}
   const data=storyDataFor(kind,id);
   if(!data){toast('这个词数还不够拼一篇，先学几个新词吧。');return;}
-  storyRun={screen:'play',kind,data,index:0,checked:false,answer:'',result:null,results:[],combo:0,maxCombo:0,xp:0,startedAt:Date.now()};
+  storyRun={screen:'play',kind,data,index:0,checked:false,answer:'',answers:emptyStoryAnswers(data.sentences[0]),result:null,results:[],combo:0,maxCombo:0,xp:0,startedAt:Date.now()};
   view='story';
   renderStory();
   setTimeout(()=>playStorySentence(),260);
@@ -886,11 +892,12 @@ function storyDiffHtml(result){
 }
 function checkStoryAnswer(){
   if(!storyRun||storyRun.checked)return;
-  const input=document.querySelector('#story-answer');
-  const answer=input?.value??'';
+  const slots=[...document.querySelectorAll('.word-slot')];
+  const answer=slots.length?slots.map(el=>el.value.trim()).join(' '):(document.querySelector('#story-answer')?.value??'');
   const s=storyRun.data.sentences[storyRun.index];
   const result=compareSentence(answer,s.en);
   result.targets=storyTargetWords(s,storyRun.data).map(w=>w.word);
+  storyRun.answers=slots.length?slots.map(el=>el.value.trim()):[];
   storyRun.answer=answer;storyRun.result=result;storyRun.checked=true;
   const good=result.ratio>=0.8;
   storyRun.combo=good?storyRun.combo+1:0;
@@ -904,7 +911,7 @@ function checkStoryAnswer(){
 function nextStorySentence(){
   if(!storyRun)return;
   if(storyRun.index>=storyRun.data.sentences.length-1){finishStory();return;}
-  storyRun.index++;storyRun.checked=false;storyRun.answer='';storyRun.result=null;
+  storyRun.index++;storyRun.checked=false;storyRun.answer='';storyRun.answers=emptyStoryAnswers(storyRun.data.sentences[storyRun.index]);storyRun.result=null;
   renderStory();
   setTimeout(()=>playStorySentence(),220);
 }
@@ -930,6 +937,12 @@ function renderStoryPlay(){
   const run=storyRun,data=run.data,s=data.sentences[run.index];
   if(!s){finishStory();return;}
   const result=run.result;
+  const tokens=storyTokens(s);
+  const answers=Array.isArray(run.answers)&&run.answers.length===tokens.length?run.answers:tokens.map(()=>'');
+  const slotHtml=tokens.map((word,index)=>{
+    const status=run.checked&&result? (result.expectedParts?.[index]?.ok?'ok':'miss'):'';
+    return `<input class="word-slot ${status}" data-slot="${index}" data-key-sound="on" value="${esc(answers[index]||'')}" style="--chars:${Math.min(18,Math.max(3,word.length))}" ${run.checked?'disabled':''} autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="第 ${index+1} 个词，共 ${tokens.length} 个" inputmode="text">`;
+  }).join('');
   const pct=Math.round(run.index/Math.max(1,data.sentences.length)*100);
   app.innerHTML=`<div class="shell story-shell">${topbar()}<main class="container story-play">
     <div class="story-play-top">
@@ -947,16 +960,17 @@ function renderStoryPlay(){
         <button class="btn ghost" data-action="story-play-slow">慢速 0.6×</button>
         <span class="story-rate">语速 ${storyRateValue().toFixed(2)}× · 可调</span>
       </div>
-      <form id="story-form" class="story-form" autocomplete="off">
-        <input id="story-answer" data-key-sound="on" value="${esc(run.answer)}" ${run.checked?'disabled':''} placeholder="听一句，写一句…" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="输入听到的英文句子">
-        <button class="btn ${run.checked?'primary':'primary'}" type="submit">${run.checked?'下一句':'检查听写'} ${icon(run.checked?'arrowRight':'check')}</button>
+      <form id="story-form" class="story-word-form" autocomplete="off">
+        <div class="word-slots" role="group" aria-label="一个词一个格，共 ${tokens.length} 个词">${slotHtml}</div>
+        ${run.checked?'':`<button class="btn primary" type="submit">检查听写 ${icon('check')}</button>`}
       </form>
-      ${run.checked?`${storyDiffHtml(result)}<div class="story-actions story-after"><button class="btn primary" data-action="story-next">${run.index>=data.sentences.length-1?'完成这篇':'下一句'} ${icon('arrowRight')}</button><button class="btn ghost" data-action="story-play">${icon('volume')} 再听一遍</button>${result.exact?'<span class="story-perfect">+10 完美分</span>':''}</div>`:`<div class="story-before-hint"><span>Enter 检查</span><span>先听两遍，再下笔</span><span>错词会自动汇总</span></div>`}
+      ${run.checked?`${storyDiffHtml(result)}<div class="story-actions story-after"><button class="btn primary" data-action="story-next">${run.index>=data.sentences.length-1?'完成这篇':'下一句'} ${icon('arrowRight')}</button><button class="btn ghost" data-action="story-play">${icon('volume')} 再听一遍</button>${result.exact?'<span class="story-perfect">+10 完美分</span>':''}</div>`:`<div class="story-before-hint"><span>每词一格</span><span>空格 / → 跳下一格</span><span>Enter 检查</span><span>可整句粘贴</span></div>`}
     </section>
     <p class="story-foot-note">键盘音效随打字触发；如果觉得吵，右上角可关。故事听写只记录 XP，不自动改 FSRS。</p>
   </main></div>${mobileNav()}`;
-  if(!run.checked)requestAnimationFrame(()=>document.querySelector('#story-answer')?.focus());
-  else requestAnimationFrame(()=>document.querySelector('[data-action="story-next"]')?.focus());
+  const coarse=window.matchMedia?.('(pointer:coarse)')?.matches;
+  if(!run.checked&&!coarse)requestAnimationFrame(()=>document.querySelector('.word-slot')?.focus());
+  else if(run.checked&&!coarse)requestAnimationFrame(()=>document.querySelector('[data-action="story-next"]')?.focus());
 }
 function renderStorySummary(){
   const run=storyRun,sum=run.summary||{accuracy:0,missed:[]};
@@ -1764,7 +1778,7 @@ document.addEventListener('click',event=>{
     case 'story-exit':case 'story-home':storyRun=null;storyTab='stories';view='story';render();break;
     case 'story-retry':{
       if(!storyRun?.data)break;
-      const data=storyRun.data;storyRun={screen:'play',kind:storyRun.kind||'pack',data,index:0,checked:false,answer:'',result:null,results:[],combo:0,maxCombo:0,xp:0,startedAt:Date.now()};
+      const data=storyRun.data;storyRun={screen:'play',kind:storyRun.kind||'pack',data,index:0,checked:false,answer:'',answers:emptyStoryAnswers(data.sentences[0]),result:null,results:[],combo:0,maxCombo:0,xp:0,startedAt:Date.now()};
       renderStory();setTimeout(()=>playStorySentence(),220);break;
     }
     case 'story-misses':storyPracticeMisses();break;
@@ -1855,12 +1869,28 @@ document.addEventListener('click',event=>{
   }
 });
 document.addEventListener('input',event=>{
-  if(event.target.id==='story-answer'){
-    if(storyRun)storyRun.answer=event.target.value;
+  const storySlot=event.target.closest?.('.word-slot');
+  if(storySlot&&storyRun?.screen==='play'&&!storyRun.checked){
+    const index=Number(storySlot.dataset.slot);
+    const tokens=storyTokens(storyRun.data.sentences[storyRun.index]);
     if(state.settings.keySound!==false&&!event.isComposing){
       const type=event.inputType||'';
       if(type.startsWith('delete'))keyBackspace();else if(type.startsWith('insert')&&!type.includes('Paste'))keyClick();
     }
+    let value=storySlot.value;
+    if(/\s/.test(value)){
+      const parts=value.trim().split(/\s+/).filter(Boolean);
+      const slots=[...document.querySelectorAll('.word-slot')];
+      parts.forEach((part,offset)=>{
+        const target=index+offset;
+        if(target<tokens.length){slots[target].value=part;storyRun.answers[target]=part;}
+      });
+      storyRun.answer=storyRun.answers.join(' ').trim();
+      focusStorySlot(Math.min(tokens.length-1,index+parts.length));
+      return;
+    }
+    storyRun.answers[index]=value;
+    storyRun.answer=storyRun.answers.join(' ').trim();
   }
   if(event.target.id==='spell-answer'&&state.settings.keySound!==false&&!event.isComposing){
     const type=event.inputType||'';
@@ -1870,6 +1900,24 @@ document.addEventListener('input',event=>{
   if(event.target.id==='search'){query=event.target.value;page=1;renderRows();}
 });
 document.addEventListener('paste',event=>{
+  const storySlot=event.target.closest?.('.word-slot');
+  if(storySlot&&storyRun?.screen==='play'&&!storyRun.checked){
+    const text=event.clipboardData?.getData('text')||'';
+    if(text.trim()){
+      event.preventDefault();
+      const tokens=storyTokens(storyRun.data.sentences[storyRun.index]);
+      const start=Number(storySlot.dataset.slot);
+      const parts=text.trim().split(/\s+/).filter(Boolean);
+      const slots=[...document.querySelectorAll('.word-slot')];
+      parts.forEach((part,offset)=>{
+        const target=start+offset;
+        if(target<tokens.length){slots[target].value=part;storyRun.answers[target]=part;}
+      });
+      storyRun.answer=storyRun.answers.join(' ').trim();
+      focusStorySlot(Math.min(tokens.length-1,start+parts.length));
+    }
+    return;
+  }
   if(event.target.id==='sync-token'){
     const text=event.clipboardData?.getData('text')||'';
     if(/Token[：:]|同步\s*ID|gist=/.test(text)){
@@ -1953,6 +2001,16 @@ document.addEventListener('submit',event=>{
   }
 });
 document.addEventListener('keydown',event=>{
+  const storySlot=event.target.closest?.('.word-slot');
+  if(storySlot&&view==='story'&&storyRun?.screen==='play'&&!event.metaKey&&!event.ctrlKey&&!event.altKey){
+    const index=Number(storySlot.dataset.slot);
+    const tokens=storyTokens(storyRun.data.sentences[storyRun.index]);
+    if(event.key===' '){event.preventDefault();focusStorySlot(Math.min(tokens.length-1,index+1));return;}
+    if(event.key==='Backspace'&&!storySlot.value&&index>0){event.preventDefault();focusStorySlot(index-1);return;}
+    if(event.key==='ArrowRight'){event.preventDefault();focusStorySlot(Math.min(tokens.length-1,index+1));return;}
+    if(event.key==='ArrowLeft'){event.preventDefault();focusStorySlot(Math.max(0,index-1));return;}
+    if(event.key==='Enter'){event.preventDefault();if(storyRun.checked)nextStorySentence();else checkStoryAnswer();return;}
+  }
   const typing=['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName);
   if(event.key==='n'&&!typing&&!event.metaKey&&!event.ctrlKey&&!event.altKey&&!document.querySelector('dialog[open]')){
     event.preventDefault();openAddWord();return;
