@@ -194,7 +194,7 @@ export function storyMeta(pack){
   return {
     sentences:pack?.sentences?.length||0,
     targets:(pack?.targets||[]).length,
-    minutes:Math.max(2,Math.ceil((pack?.sentences?.length||0)*0.45)),
+    minutes:Math.max(2,Math.ceil((pack?.sentences?.length||0)*0.35)),
   };
 }
 
