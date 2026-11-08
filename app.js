@@ -740,7 +740,7 @@ function storyTokens(sentence){return tokenizeSentence(sentence?.en||'');}
 function emptyStoryAnswers(sentence){return storyTokens(sentence).map(()=>'');}
 function focusStorySlot(index){
   const el=document.querySelector(`.word-slot[data-slot="${index}"]`);
-  if(el){el.focus();try{el.setSelectionRange(el.value.length,el.value.length);}catch{}}
+  if(el){el.focus({preventScroll:true});try{el.setSelectionRange(el.value.length,el.value.length);}catch{}}
 }
 function storyVoice(){
   if(!('speechSynthesis' in window))return null;
@@ -874,7 +874,7 @@ function startStory(kind,id){
   if(!data){toast('这个词数还不够拼一篇，先学几个新词吧。');return;}
   storyRun={screen:'play',kind,data,index:0,checked:false,answer:'',answers:emptyStoryAnswers(data.sentences[0]),result:null,results:[],combo:0,maxCombo:0,xp:0,startedAt:Date.now()};
   view='story';
-  renderStory();
+  renderStory();window.scrollTo({top:0,behavior:'auto'});
   setTimeout(()=>playStorySentence(),260);
 }
 function playStorySentence(rate=storyRateValue()){
@@ -912,7 +912,7 @@ function nextStorySentence(){
   if(!storyRun)return;
   if(storyRun.index>=storyRun.data.sentences.length-1){finishStory();return;}
   storyRun.index++;storyRun.checked=false;storyRun.answer='';storyRun.answers=emptyStoryAnswers(storyRun.data.sentences[storyRun.index]);storyRun.result=null;
-  renderStory();
+  renderStory();window.scrollTo({top:0,behavior:'auto'});
   setTimeout(()=>playStorySentence(),220);
 }
 function finishStory(){
@@ -931,7 +931,7 @@ function finishStory(){
   state.storyStats.xp=(Number(state.storyStats.xp)||0)+storyRun.xp;
   state.storyStats.completed=(Number(state.storyStats.completed)||0)+1;
   state.storyStats.bestCombo=Math.max(Number(state.storyStats.bestCombo)||0,storyRun.maxCombo);
-  save();finishChime();confetti();renderStory();
+  save();finishChime();confetti();renderStory();window.scrollTo({top:0,behavior:'auto'});
 }
 function renderStoryPlay(){
   const run=storyRun,data=run.data,s=data.sentences[run.index];
@@ -969,8 +969,8 @@ function renderStoryPlay(){
     <p class="story-foot-note">键盘音效随打字触发；如果觉得吵，右上角可关。故事听写只记录 XP，不自动改 FSRS。</p>
   </main></div>${mobileNav()}`;
   const coarse=window.matchMedia?.('(pointer:coarse)')?.matches;
-  if(!run.checked&&!coarse)requestAnimationFrame(()=>document.querySelector('.word-slot')?.focus());
-  else if(run.checked&&!coarse)requestAnimationFrame(()=>document.querySelector('[data-action="story-next"]')?.focus());
+  if(!run.checked&&!coarse)requestAnimationFrame(()=>document.querySelector('.word-slot')?.focus({preventScroll:true}));
+  else if(run.checked&&!coarse)requestAnimationFrame(()=>document.querySelector('[data-action="story-next"]')?.focus({preventScroll:true}));
 }
 function renderStorySummary(){
   const run=storyRun,sum=run.summary||{accuracy:0,missed:[]};
@@ -1771,15 +1771,15 @@ document.addEventListener('click',event=>{
     case 'view-existing':document.querySelector('#add-word-dialog').close();detail(id);break;
     case 'start':start(target.dataset.mode);break;
     case 'story-start':startStory(target.dataset.kind,target.dataset.id);break;
-    case 'story-tab':storyRun=null;storyTab=target.dataset.tab||'stories';view='story';render();break;
+    case 'story-tab':storyRun=null;storyTab=target.dataset.tab||'stories';view='story';render();window.scrollTo({top:0,behavior:'auto'});break;
     case 'story-play':playStorySentence();break;
     case 'story-play-slow':playStorySentence(Math.max(0.55,storyRateValue()-0.2));break;
     case 'story-next':nextStorySentence();break;
-    case 'story-exit':case 'story-home':storyRun=null;storyTab='stories';view='story';render();break;
+    case 'story-exit':case 'story-home':storyRun=null;storyTab='stories';view='story';render();window.scrollTo({top:0,behavior:'auto'});break;
     case 'story-retry':{
       if(!storyRun?.data)break;
       const data=storyRun.data;storyRun={screen:'play',kind:storyRun.kind||'pack',data,index:0,checked:false,answer:'',answers:emptyStoryAnswers(data.sentences[0]),result:null,results:[],combo:0,maxCombo:0,xp:0,startedAt:Date.now()};
-      renderStory();setTimeout(()=>playStorySentence(),220);break;
+      renderStory();window.scrollTo({top:0,behavior:'auto'});setTimeout(()=>playStorySentence(),220);break;
     }
     case 'story-misses':storyPracticeMisses();break;
     case 'toggle-sound':{
