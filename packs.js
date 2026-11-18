@@ -933,5 +933,194 @@ export const learningPacks=[
         "collocations": "be subject to change 可能会有变化"
       }
     ]
+  },
+  {
+    "id": "2026-11-18-practice-02",
+    "date": "2026-11-18",
+    "title": "2026-11-18 第二组阅读积累",
+    "marker": "【2026-11-18 阅读积累 2】",
+    "entries": [
+      {
+        "word": "quiz",
+        "definition": "n. 测验；小测试；v. 测验，询问",
+        "english": "a short test or an informal assessment; to question someone",
+        "mnemonic": "近义：test / examination / assessment。搭配：pop quiz 突击小测；quiz show 智力竞赛节目。",
+        "collocations": "a pop quiz 突击小测"
+      },
+      {
+        "word": "supposedly",
+        "definition": "adv. 据说；按理说（表示未经证实的说法）",
+        "english": "according to what is believed or claimed, but not proven",
+        "mnemonic": "来自 suppose + -edly；近义：allegedly / reportedly / purportedly。注意：supposedly 常暗示“未必是真的”。",
+        "collocations": "supposedly true 据说是真的"
+      },
+      {
+        "word": "spatial",
+        "definition": "adj. 空间的",
+        "english": "relating to space, position, or the way objects are arranged",
+        "mnemonic": "space + -ial；搭配：spatial awareness 空间意识；spatial reasoning 空间推理。形近：spacious（宽敞的）。",
+        "collocations": "spatial awareness 空间意识"
+      },
+      {
+        "word": "vice versa",
+        "definition": "phr. 反之亦然",
+        "english": "with the order reversed; conversely",
+        "mnemonic": "拉丁语；A affects B, and vice versa = A 影响 B，反之亦然。近义：conversely / the other way around。",
+        "collocations": "A affects B, and vice versa A 影响 B，反之亦然"
+      },
+      {
+        "word": "categorically",
+        "definition": "adv. 断然地；明确地",
+        "english": "in a clear, definite, and absolute way",
+        "mnemonic": "category + -ical + -ly；categorical denial 断然否认；近义：absolutely / emphatically / definitively。",
+        "collocations": "categorically deny 断然否认"
+      },
+      {
+        "word": "reliability",
+        "definition": "n. 可靠性",
+        "english": "the quality of being trustworthy or consistently good",
+        "mnemonic": "rely + -able + -ity；形容词 reliable；搭配：data reliability 数据可靠性；employee reliability。辨析：reliability 可靠性 / validity 有效性。",
+        "collocations": "data reliability 数据可靠性"
+      },
+      {
+        "word": "excel at",
+        "definition": "phr. 擅长",
+        "english": "to be exceptionally good at something",
+        "mnemonic": "excel at 后接具体技能/活动；excel in 后接领域/学科。近义：be good at / be skilled at。名词 excellence。",
+        "collocations": "excel at math 擅长数学"
+      },
+      {
+        "word": "be drawn to",
+        "definition": "phr. 被……吸引",
+        "english": "to be attracted to or interested in something",
+        "mnemonic": "draw 的过去分词 drawn；近义：be attracted to / be fascinated by。draw attention 吸引注意。",
+        "collocations": "be drawn to a career 被一种职业吸引"
+      },
+      {
+        "word": "take something with a grain of salt",
+        "definition": "phr. 对某事持审慎态度；不要全盘相信",
+        "english": "to be skeptical about something and not fully believe it",
+        "mnemonic": "也可说 a pinch of salt；grain 颗粒。阅读中常表示“对未经证实的说法保留态度”。",
+        "collocations": "take the claim with a grain of salt 对说法持保留态度"
+      },
+      {
+        "word": "district",
+        "definition": "n. 区；地区",
+        "english": "an area of a city or country, especially an administrative region",
+        "mnemonic": "近义：area / region / zone。搭配：school district 学区；business district 商业区；district court 地方法院。",
+        "collocations": "school district 学区"
+      },
+      {
+        "word": "school district",
+        "definition": "n. 学区；地方学区",
+        "english": "a local authority responsible for public schools in an area",
+        "mnemonic": "school + district；美国教育管理单位；搭配：local school district。",
+        "collocations": "local school district 地方学区"
+      },
+      {
+        "word": "dissolve",
+        "definition": "v. 解除；消除；溶解",
+        "english": "to break up, end, or disappear; to mix into a liquid and become part of it",
+        "mnemonic": "dis-（分开）+ solv（松开）；搭配：dissolve parliament 解散议会；dissolve in water 溶于水。形近：resolve（解决/决心）。",
+        "collocations": "dissolve parliament 解散议会"
+      },
+      {
+        "word": "rotate",
+        "definition": "v. 轮流；轮换；旋转",
+        "english": "to take turns doing something; to turn around a central point",
+        "mnemonic": "rotation 轮换/旋转；搭配：rotate crops 轮作；rotate shifts 轮班。近义：take turns / alternate。",
+        "collocations": "rotate shifts 轮班"
+      },
+      {
+        "word": "orchestrate",
+        "definition": "v. 精心组织；安排；编配管弦乐",
+        "english": "to organize or arrange a complex event or situation; to compose music for an orchestra",
+        "mnemonic": "orchestra 管弦乐队；orchestrate a campaign 精心策划活动；名词 orchestration。",
+        "collocations": "orchestrate a campaign 精心组织一场活动"
+      },
+      {
+        "word": "morale",
+        "definition": "n. 士气；精神面貌",
+        "english": "the spirit, confidence, and enthusiasm of a group of people",
+        "mnemonic": "搭配：boost morale 提振士气；low morale 士气低落。辨析：morale 士气 / moral 道德的。",
+        "collocations": "boost morale 提振士气"
+      },
+      {
+        "word": "retention",
+        "definition": "n. 留任；保留；记忆保持",
+        "english": "the act of keeping something or someone; the ability to remember information",
+        "mnemonic": "retain + -tion；搭配：employee retention 员工留任；memory retention 记忆保持；retention rate 保留率。",
+        "collocations": "employee retention 员工留任"
+      },
+      {
+        "word": "gamble",
+        "definition": "v./n. 冒险；赌博",
+        "english": "to risk money or something valuable; a risky action",
+        "mnemonic": "gambling 赌博；take a gamble 冒险一试；gamble on 把希望寄托于。近义：bet / risk / venture。",
+        "collocations": "take a gamble 冒险一试"
+      },
+      {
+        "word": "bewilder",
+        "definition": "v. 使困惑",
+        "english": "to confuse someone completely",
+        "mnemonic": "be- + wilder；形容词 bewildered / bewildering；名词 bewilderment。近义：confuse / puzzle / baffle。",
+        "collocations": "bewildered by 被……弄糊涂"
+      },
+      {
+        "word": "instruction",
+        "definition": "n. 教学；指导；指令",
+        "english": "the act of teaching or giving directions; an order or direction",
+        "mnemonic": "instruct + -ion；搭配：follow instructions 按照指示；classroom instruction 课堂教学；instructional 教学的。",
+        "collocations": "follow instructions 按照指示"
+      },
+      {
+        "word": "nightmare",
+        "definition": "n. 噩梦；极其棘手的事情",
+        "english": "a frightening dream; a very unpleasant or difficult experience",
+        "mnemonic": "night + mare；形容词 nightmarish；搭配：a nightmare commute 噩梦般的通勤。",
+        "collocations": "a nightmare commute 噩梦般的通勤"
+      },
+      {
+        "word": "take hold",
+        "definition": "phr. 开始流行；扎根；开始起作用",
+        "english": "to become established or start to have an effect",
+        "mnemonic": "搭配：a habit takes hold 习惯扎根；the idea took hold 想法开始流行。近义：catch on / become established。",
+        "collocations": "the idea took hold 这个想法开始扎根"
+      },
+      {
+        "word": "determine whether",
+        "definition": "phr. 判断是否；决定是否",
+        "english": "to decide or find out if something is true or should happen",
+        "mnemonic": "determine + whether；whether 引导宾语从句；determine whether to do sth. 决定是否做某事。",
+        "collocations": "determine whether to go 决定是否去"
+      },
+      {
+        "word": "turn out to be",
+        "definition": "phr. 最终证明是；结果是",
+        "english": "to prove to be; to be discovered to be",
+        "mnemonic": "turn out 结果是；it turns out that... 事实证明……；turn out well 结果很好。",
+        "collocations": "turn out to be true 最终证明是真的"
+      },
+      {
+        "word": "frustration",
+        "definition": "n. 挫败感；懊恼",
+        "english": "the feeling of being annoyed or blocked when you cannot achieve something",
+        "mnemonic": "frustrate + -ion；形容词 frustrated / frustrating；in frustration 沮丧地；sense of frustration 挫败感。",
+        "collocations": "in frustration 沮丧地"
+      },
+      {
+        "word": "symmetry",
+        "definition": "n. 对称，匀称",
+        "english": "the quality of being balanced, or having parts that match",
+        "mnemonic": "补充：symmetrical 对称的；asymmetry 不对称；spatial symmetry 空间对称；perfect symmetry 完美对称。",
+        "collocations": "spatial symmetry 空间对称"
+      },
+      {
+        "word": "conduct",
+        "mnemonic": "补充：conduct a survey 进行调查；code of conduct 行为准则；conductor 指挥/导体；注意名词 /ˈkɒndʌkt/ 与动词 /kənˈdʌkt/ 发音不同。",
+        "english": "to organize and carry out an activity; the way someone behaves",
+        "collocations": "code of conduct 行为准则"
+      }
+    ]
   }
 ];
