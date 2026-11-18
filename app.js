@@ -38,8 +38,8 @@ const englishFor=w=>String(w.english||ENGLISH_DEFS[normalizeWord(w.word)]||'').t
 function bilingualDefinitionHtml(w){
   const en=englishFor(w);
   return `<div class="bilingual-def">
-    <div class="def-pane en"><span class="def-kicker">ENGLISH</span><p>${esc(en||'英文解释待补')}</p></div>
-    <div class="def-pane zh"><span class="def-kicker">中文</span><p>${definitionHtml(w.definition)}</p></div>
+    <div class="def-pane en"><span class="def-kicker">ENGLISH · 英文解释</span><p>${esc(en||'英文解释待补')}</p></div>
+    <div class="def-pane zh"><span class="def-kicker">中文释义</span><p>${definitionHtml(w.definition)}</p></div>
   </div>`;
 }
 const studied=()=>words.filter(w=>progress(w).firstSeen);
@@ -1200,7 +1200,7 @@ function wordCard(s,w,p){
     </div>
     <div class="card-history"><span>忘记 <b>${p.mistakes||0}</b> 次</span><span>模糊 <b>${p.fuzzyCount||0}</b> 次</span><span>复习 <b>${p.card?.reps||0}</b> 次</span>${p.card&&p.card.estimated?'<span>迁移估计的初始间隔</span>':''}</div>
   </div>`:`<div class="reveal-zone">
-    <button class="reveal-btn" data-action="reveal">回忆一下，显示释义</button>
+    <button class="reveal-btn" data-action="reveal">回忆一下，显示中英释义</button>
     <span class="hint">按 <kbd>Space</kbd> 或点击显示</span>
   </div>`;
   return `<section class="study-card">
