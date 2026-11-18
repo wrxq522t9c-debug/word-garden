@@ -773,5 +773,165 @@ export const learningPacks=[
         "mnemonic": "干预/介入；intervene in；名词 intervention。"
       }
     ]
+  },
+  {
+    "id": "2026-11-18-practice-01",
+    "date": "2026-11-18",
+    "title": "2026-11-18 阅读/乡村主题积累",
+    "marker": "【2026-11-18 阅读积累】",
+    "entries": [
+      {
+        "word": "tranquil",
+        "phonetic": "[ˈtræŋkwɪl]",
+        "definition": "adj. 宁静的，平静的（描述乡村生活特点）",
+        "english": "calm, peaceful, and quiet",
+        "mnemonic": "近义：peaceful / calm / serene / placid。形近：tranquility（宁静）；不要和 tranquilizer（镇静剂）混。搭配：a tranquil village / tranquil rural life。",
+        "collocations": "tranquil rural life 宁静的乡村生活"
+      },
+      {
+        "word": "conservatism",
+        "phonetic": "[kənˈsɜːvətɪzəm]",
+        "definition": "n. 保守主义，守旧",
+        "english": "a political philosophy that favors tradition and limits change",
+        "mnemonic": "conserve（保存）+ -atism；形容词 conservative；反义 progressivism / liberalism。阅读中常指“守旧、反对激进变革”。",
+        "collocations": "cultural conservatism 文化保守主义"
+      },
+      {
+        "word": "intermittent",
+        "phonetic": "[ˌɪntəˈmɪtənt]",
+        "definition": "adj. 间歇的，断断续续的",
+        "english": "stopping and starting again at intervals; not continuous",
+        "mnemonic": "inter-（在……之间）+ mitt（送）+ -ent；动词 intermit；近义 sporadic / periodic / occasional。反义 continuous / constant。",
+        "collocations": "intermittent rain 间歇性的雨"
+      },
+      {
+        "word": "detached",
+        "phonetic": "[dɪˈtætʃt]",
+        "definition": "adj. 独栋的，分开的；（态度）超然的",
+        "english": "separate or disconnected; (of a house) not joined to another",
+        "mnemonic": "detach（分开）+ -ed；a detached house 独栋房屋；a detached attitude 超然的态度。形近：attached（附着的/依恋的）。",
+        "collocations": "a detached house 独栋房屋"
+      },
+      {
+        "word": "endorse",
+        "phonetic": "[ɪnˈdɔːs]",
+        "definition": "v. 赞同，支持，认可；在支票背面签名",
+        "english": "to publicly support or approve of something",
+        "mnemonic": "近义：support / approve / back / sanction。名词 endorsement。形近：endow（捐赠）/ endure（忍受）。",
+        "collocations": "endorse a policy 支持一项政策"
+      },
+      {
+        "word": "deplorable",
+        "phonetic": "[dɪˈplɔːrəbl]",
+        "definition": "adj. 糟糕的，令人痛心的，应受谴责的",
+        "english": "very bad or unacceptable; deserving strong disapproval",
+        "mnemonic": "deplore（谴责/痛惜）+ -able；近义：shameful / disgraceful / unacceptable / lamentable。",
+        "collocations": "deplorable conditions 糟糕的状况"
+      },
+      {
+        "word": "renaissance",
+        "phonetic": "[rɪˈneɪsns]",
+        "definition": "n. 复兴，文艺复兴（rural renaissance 乡村复兴）",
+        "english": "a revival of interest in art and learning; a rebirth",
+        "mnemonic": "re-（再）+ naiss（出生）+ -ance；字面“重生”。the Renaissance 文艺复兴；rural renaissance 乡村复兴。",
+        "collocations": "rural renaissance 乡村复兴"
+      },
+      {
+        "word": "mar",
+        "phonetic": "[mɑː(r)]",
+        "definition": "v. 破坏，损毁（六级阅读高频负面动词，等于 spoil/damage）",
+        "english": "to damage or spoil something so that it is less perfect",
+        "mnemonic": "近义：spoil / damage / ruin / impair。mar the beauty of... 破坏……的美；mar the occasion 破坏场合。",
+        "collocations": "mar the beauty of the countryside 破坏乡村之美"
+      },
+      {
+        "word": "revitalisation",
+        "phonetic": "[ˌriːˌvaɪtəlaɪˈzeɪʃn]",
+        "definition": "n. 复兴，振兴",
+        "english": "the process of bringing something back to life, energy, or activity",
+        "mnemonic": "re-（再）+ vital（有活力的）+ -isation；动词 revitalise；美式 revitalization。近义：revival / regeneration / rejuvenation。",
+        "collocations": "rural revitalisation 乡村振兴"
+      },
+      {
+        "word": "destined",
+        "phonetic": "[ˈdestɪnd]",
+        "definition": "adj. 注定的（be destined to do 必然会……，替换 inevitable）",
+        "english": "certain to happen or to have a particular future",
+        "mnemonic": "be destined to do sth. 注定做某事；be destined for... 注定走向……；名词 destiny。近义：fated / doomed / inevitable。",
+        "collocations": "be destined to succeed 注定成功"
+      },
+      {
+        "word": "beholder",
+        "phonetic": "[bɪˈhəʊldə(r)]",
+        "definition": "n. 观看者，旁观者",
+        "english": "a person who looks at or observes something",
+        "mnemonic": "behold（看）+ -er；Beauty is in the eye of the beholder. 情人眼里出西施/美在观者眼中。",
+        "collocations": "Beauty is in the eye of the beholder. 美在观者眼中。"
+      },
+      {
+        "word": "embedded",
+        "phonetic": "[ɪmˈbedɪd]",
+        "definition": "adj. 根深蒂固的，植入的",
+        "english": "firmly fixed inside something; deeply established",
+        "mnemonic": "embed（嵌入）+ -ed；embedded in... 深植于/嵌入……；be embedded in culture 根植于文化。近义：ingrained / entrenched / implanted。",
+        "collocations": "embedded in local culture 根植于当地文化"
+      },
+      {
+        "word": "aesthetic",
+        "phonetic": "[iːsˈθetɪk]",
+        "definition": "adj. 美学的，审美的；n. 审美观",
+        "english": "connected with beauty and the appreciation of beauty",
+        "mnemonic": "aesthetic value 审美价值；aesthetic appeal 美感；名词 aesthetics 美学。形近：ascetic（禁欲的）/ athletic（运动的）。",
+        "collocations": "aesthetic value 审美价值"
+      },
+      {
+        "word": "aesthetically",
+        "phonetic": "[iːsˈθetɪkli]",
+        "definition": "adv. 审美地，从美学角度",
+        "english": "in a way that relates to beauty or appearance",
+        "mnemonic": "aesthetic + -ally；aesthetically pleasing 赏心悦目的。",
+        "collocations": "aesthetically pleasing 赏心悦目的"
+      },
+      {
+        "word": "symmetry",
+        "phonetic": "[ˈsɪmətri]",
+        "definition": "n. 对称，匀称",
+        "english": "the quality of being balanced, or having parts that match",
+        "mnemonic": "sym-（共同）+ metry（测量）；形容词 symmetric / symmetrical；反义 asymmetry。",
+        "collocations": "perfect symmetry 完美的对称"
+      },
+      {
+        "word": "radiance",
+        "phonetic": "[ˈreɪdiəns]",
+        "definition": "n. 光辉，容光焕发",
+        "english": "bright light or a glowing quality; great happiness",
+        "mnemonic": "radiate（发光/散发）+ -ance；形容词 radiant；近义：brightness / glow / brilliance。",
+        "collocations": "the radiance of the sunset 日落的光辉"
+      },
+      {
+        "word": "warrant",
+        "phonetic": "[ˈwɒrənt]",
+        "definition": "v. 使……显得合理，值得，保证；n. 授权令",
+        "english": "to make something seem reasonable or necessary; to justify",
+        "mnemonic": "warrant attention 值得关注；warrant a reply 有理由回复；名词 warrant 搜查令/授权令。近义：justify / deserve / merit。",
+        "collocations": "warrant attention 值得关注"
+      },
+      {
+        "word": "embodiment",
+        "phonetic": "[ɪmˈbɒdimənt]",
+        "definition": "n. 体现，化身",
+        "english": "a person or thing that represents an idea or quality",
+        "mnemonic": "embody（体现）+ -ment；the embodiment of... ……的化身/体现；动词 embody。",
+        "collocations": "the embodiment of rural life 乡村生活的体现"
+      },
+      {
+        "word": "subject to",
+        "phonetic": "",
+        "definition": "phr. 受……支配，服从于；易受……影响",
+        "english": "controlled by or dependent on something; likely to be affected by",
+        "mnemonic": "subject to change 可能变化；be subject to... 受制于/易受……影响；注意 subject 此处读 /ˈsʌbdʒɪkt/。",
+        "collocations": "be subject to change 可能会有变化"
+      }
+    ]
   }
 ];

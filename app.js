@@ -3,8 +3,9 @@ import {words as baseWords,readingBatch} from './words.js';
 import {learningPacks} from './packs.js';
 import {loadSyncConfig,saveSyncConfig,clearSyncConfig,isSyncConfigured,maskToken,fingerprint,extractGistId,verifyGithubToken,createSyncGist,fetchSyncGist,pushSyncGist} from './sync.js';
 import {ESSAY_TYPES,ESSAY_SAMPLES,STORY_PACKS,findStoryPack,findEssayType,findEssaySample,storyWordEntries,selectStoryWords,buildLocalStory,storyMeta,compareSentence,accuracyLabel,tokenizeSentence} from './stories.js';
+import {ENGLISH_DEFS} from './english-defs.js';
 import {setSoundEnabled,keyClick,keyBackspace,errorBuzz,successChime,comboChime,finishChime} from './sound.js';
-import {backupBeforeMigration,freshState,dayKey,addDays,rateWord,isMastered,dueWords,newWords,newWordsLearnedToday,spellingWords,validateBackup,normalizeAnswer,addCustomWord,findExistingWord,rememberSession,getSession,migratePreferences,migrateToV2,migrateSettings,advanceQueue,reviewPlan,weakWords,leechWords,forecastDue,retentionStats,previewRating,intervalLabel,captureAnswerUndo,undoAnswer,importReadingBatch,importLearningPacks,nextAnswerIndex,nextConsolidation,dueDayOf,isLearningCard,isDue} from './engine.js';
+import {backupBeforeMigration,freshState,dayKey,addDays,rateWord,isMastered,dueWords,newWords,newWordsLearnedToday,spellingWords,validateBackup,normalizeAnswer,normalizeWord,addCustomWord,findExistingWord,rememberSession,getSession,migratePreferences,migrateToV2,migrateSettings,advanceQueue,reviewPlan,weakWords,leechWords,forecastDue,retentionStats,previewRating,intervalLabel,captureAnswerUndo,undoAnswer,importReadingBatch,importLearningPacks,nextAnswerIndex,nextConsolidation,dueDayOf,isLearningCard,isDue} from './engine.js';
 
 const params=new URLSearchParams(location.search);
 const isTestMode=params.has('test');
@@ -33,6 +34,14 @@ let syncReady=false,applyingRemote=false,autoPushTimer=null;
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const progress=w=>state.progress[w.id]||{};
+const englishFor=w=>String(w.english||ENGLISH_DEFS[normalizeWord(w.word)]||'').trim();
+function bilingualDefinitionHtml(w){
+  const en=englishFor(w);
+  return `<div class="bilingual-def">
+    <div class="def-pane en"><span class="def-kicker">ENGLISH</span><p>${esc(en||'英文解释待补')}</p></div>
+    <div class="def-pane zh"><span class="def-kicker">中文</span><p>${definitionHtml(w.definition)}</p></div>
+  </div>`;
+}
 const studied=()=>words.filter(w=>progress(w).firstSeen);
 const mastered=()=>words.filter(w=>isMastered(progress(w)));
 const today=()=>dayKey();
@@ -1047,7 +1056,7 @@ function getFiltered(){
   if(dayFilter!=='all')list=list.filter(w=>String(w.day)===String(dayFilter));
   if(query.trim()){
     const q=query.trim().toLowerCase();
-    list=list.filter(w=>w.word.toLowerCase().includes(q)||w.definition.includes(q)||(w.collocations||'').toLowerCase().includes(q)||(w.mnemonic||'').toLowerCase().includes(q)||(progress(w).note||'').toLowerCase().includes(q));
+    list=list.filter(w=>w.word.toLowerCase().includes(q)||w.definition.includes(q)||englishFor(w).toLowerCase().includes(q)||(w.collocations||'').toLowerCase().includes(q)||(w.mnemonic||'').toLowerCase().includes(q)||(progress(w).note||'').toLowerCase().includes(q));
   }
   return list;
 }
@@ -1109,7 +1118,7 @@ function detail(id){
     <div class="modal-head"><span class="chip ${s.cls==='new'?'':s.cls}">${groupLabel(w)} · ${s.label}</span><button class="modal-close" data-action="close-dialog" aria-label="关闭">${icon('x')}</button></div>
     <h2 class="modal-word">${esc(w.word)}</h2>
     <div class="phonetic">${esc(w.phonetic||'音标待补')}<button class="speaker" data-action="speak" data-id="${w.id}" aria-label="播放发音">${icon('volume')}</button></div>
-    <div class="definition">${definitionHtml(w.definition)}</div>
+    ${bilingualDefinitionHtml(w)}
     <div class="extras">
       ${w.mnemonic?`<div class="extra-box memory"><b>近义词 / 助记</b>${esc(w.mnemonic)}</div>`:''}
       ${w.collocations?`<div class="extra-box"><b>搭配 / 例句</b>${esc(w.collocations)}</div>`:''}
@@ -1183,7 +1192,7 @@ function wordCard(s,w,p){
   const isNew=!p.card;
   const stateChip=p.card?(isLearningCard(p)?'巩固中':isDue(p)?'待复习':'复习'):'新词';
   const answer=revealed?`<div class="answer">
-    <div class="definition">${definitionHtml(w.definition)}</div>
+    ${bilingualDefinitionHtml(w)}
     <div class="extras">
       ${w.mnemonic?`<div class="extra-box memory"><b>近义词 / 助记</b>${esc(w.mnemonic)}</div>`:''}
       ${w.collocations?`<div class="extra-box"><b>搭配 / 例句</b>${esc(w.collocations)}</div>`:''}
@@ -1231,7 +1240,7 @@ function spellCard(s){
   <div style="text-align:center;margin-top:16px"><button class="text-btn" data-action="skip-spell">想不起来，查看答案</button></div>`;
   return `<section class="study-card spell-card">
     <div class="card-meta"><span class="chip">拼写练习</span><span class="chip ${isMastered(p)?'good':''}">${statusOf(w,p).label}</span><button class="star ${p.favorite?'on':''}" data-action="favorite" data-id="${w.id}" aria-label="收藏">${icon('star')}</button></div>
-    <div class="spell-prompt"><p class="eyebrow">WRITE THE WORD</p><div class="definition">${definitionHtml(w.definition)}</div><p class="hint">${feedback?'':'根据释义，把这个词完整写出来'}</p></div>
+    <div class="spell-prompt"><p class="eyebrow">WRITE THE WORD</p>${bilingualDefinitionHtml(w)}<p class="hint">${feedback?'':'根据释义，把这个词完整写出来'}</p></div>
     ${result}
     <div class="study-tools">${undoControl()}</div>
   </section>`;
@@ -1633,6 +1642,7 @@ function openAddWord(){
     <form id="add-word-form">
       <div class="field"><label for="new-word">英文单词或短语 <span class="req">*</span></label><input id="new-word" name="word" placeholder="例如 serendipity" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="100" required><small class="faint">也可以直接粘贴「word 释义」，会自动拆分。</small></div>
       <div class="field"><label for="new-definition">中文释义 <span class="req">*</span></label><textarea id="new-definition" name="definition" placeholder="写这道题里它的意思" maxlength="2000" required></textarea></div>
+      <div class="field"><label for="new-english">英文解释 <span class="req">*</span></label><textarea id="new-english" name="english" placeholder="用英文解释这个词；例如 a calm and peaceful place" maxlength="5000" required></textarea><small class="faint">输入单词后会自动从本地英文词典补全；没有就自己写一句。</small></div>
       <div class="field"><label for="new-phonetic">音标 <span class="opt">（选填）</span></label><input id="new-phonetic" name="phonetic" placeholder="可留空，仍可发音" maxlength="200"></div>
       <div class="field"><label for="new-collocations">搭配 / 例句 <span class="opt">（选填）</span></label><textarea id="new-collocations" name="collocations" placeholder="题目里的短语或原句" maxlength="2000"></textarea></div>
       <div class="field"><label for="new-mnemonic">近义词 / 助记 <span class="opt">（选填）</span></label><textarea id="new-mnemonic" name="mnemonic" placeholder="近义词、词根、联想或易混词" maxlength="5000"></textarea></div>
@@ -1646,6 +1656,13 @@ function openAddWord(){
   </div>`;
   dialog.showModal();
   setTimeout(()=>document.querySelector('#new-word')?.focus(),40);
+}
+function autofillEnglish(){
+  const input=document.querySelector('#new-word'),field=document.querySelector('#new-english');
+  if(!input||!field)return;
+  if(field.dataset.touched==='1')return;
+  const hit=ENGLISH_DEFS[normalizeWord(input.value)]||'';
+  if(hit)field.value=hit;
 }
 function checkNewWord(){
   const input=document.querySelector('#new-word'),box=document.querySelector('#duplicate-check');
@@ -1674,9 +1691,11 @@ function submitNewWord(){
   if(blocked){document.querySelector('#add-error').textContent='记录已在其他页面更新，请刷新后重新添加。';return;}
   const previous=structuredClone(state);
   try{
+    if(!document.querySelector('#new-english').value.trim())throw new Error('请填写英文解释，或输入一个词库中已有英文解释的词。');
     const result=addCustomWord(baseWords,state,{
       word:document.querySelector('#new-word').value,
       definition:document.querySelector('#new-definition').value,
+      english:document.querySelector('#new-english').value,
       phonetic:document.querySelector('#new-phonetic').value,
       collocations:document.querySelector('#new-collocations').value,
       mnemonic:document.querySelector('#new-mnemonic').value
@@ -1896,7 +1915,8 @@ document.addEventListener('input',event=>{
     const type=event.inputType||'';
     if(type.startsWith('insert')&&!type.includes('Paste'))keyClick();else if(type.startsWith('delete'))keyBackspace();
   }
-  if(event.target.id==='new-word')checkNewWord();
+  if(event.target.id==='new-word'){autofillEnglish();checkNewWord();}
+  if(event.target.id==='new-english')event.target.dataset.touched='1';
   if(event.target.id==='search'){query=event.target.value;page=1;renderRows();}
 });
 document.addEventListener('paste',event=>{
@@ -1936,6 +1956,7 @@ document.addEventListener('paste',event=>{
   if(!parsed)return;
   event.preventDefault();
   document.querySelector('#new-word').value=parsed.word;
+  autofillEnglish();
   const definition=document.querySelector('#new-definition');
   if(!definition.value.trim())definition.value=parsed.definition;
   checkNewWord();

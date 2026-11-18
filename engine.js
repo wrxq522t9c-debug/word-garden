@@ -191,14 +191,15 @@ export function addCustomWord(baseWords,state,input,today=dayKey()){
   const existing=findExistingWord(baseWords,state,word);
   if(existing)return {added:false,word:existing};
   if(!word||word.length>100||!/[a-z]/.test(word)||!/^[a-z0-9 '.\-]+$/.test(word))throw new Error('请输入英文单词或短语（最多 100 个字符）。');
-  const definition=String(input.definition??'').trim(),phonetic=String(input.phonetic??'').trim(),collocations=String(input.collocations??'').trim(),mnemonic=String(input.mnemonic??'').trim();
+  const definition=String(input.definition??'').trim(),english=String(input.english??'').trim(),phonetic=String(input.phonetic??'').trim(),collocations=String(input.collocations??'').trim(),mnemonic=String(input.mnemonic??'').trim();
   if(!definition||definition.length>2000)throw new Error('请填写中文释义（最多 2000 个字符）。');
   if(phonetic.length>200||collocations.length>2000)throw new Error('音标或搭配内容过长，请缩短后保存。');
   if(mnemonic.length>5000)throw new Error('近义词或助记内容过长，请缩短到 5000 个字符以内。');
+  if(english.length>5000)throw new Error('英文解释内容过长，请缩短到 5000 个字符以内。');
   if(!validDay(today))throw new Error('添加日期无效。');
   const customWords=state.customWords||[];
   const id=Math.max(0,...baseWords.map(w=>w.id),...customWords.map(w=>w.id))+1;
-  const entry={id,word,definition,phonetic,collocations,mnemonic,originalDefinition:definition,day:0,custom:true,addedOn:today,highFrequency:false};
+  const entry={id,word,definition,english,phonetic,collocations,mnemonic,originalDefinition:definition,day:0,custom:true,addedOn:today,highFrequency:false};
   state.customWords=[...customWords,entry];
   const q=getSession(state,'learn');
   if(q?.mode==='learn'&&q.index<q.queue.length){q.queue.splice(q.index+1,0,id);q.total++;}
@@ -214,6 +215,7 @@ export function importLearningPacks(baseWords,state,packs,date=dayKey()){
     for(const entry of pack.entries||[]){
       const existing=[entry.word,...(entry.aliases||[])].map(w=>findExistingWord(baseWords,state,w)).find(Boolean);
       if(existing){
+        if(existing.custom&&entry.english&&!existing.english){existing.english=String(entry.english).slice(0,5000);updated.push({word:existing.word,id:existing.id});}
         const sameContent=existing.custom&&(existing.mnemonic||'')===(entry.mnemonic||'')&&existing.definition===entry.definition;
         if(sameContent){skipped.push({word:existing.word,reason:'already'});continue;}
         const marker=pack.marker||`【${pack.id}】`;
@@ -337,6 +339,7 @@ export function validateBackup(s,words){
       if(typeof w.word!=='string'||!normalizeWord(w.word)||w.word.length>100||keys.has(normalizeWord(w.word)))fail();
       if(typeof w.definition!=='string'||!w.definition.trim()||w.definition.length>2000||typeof w.phonetic!=='string'||w.phonetic.length>200||typeof w.collocations!=='string'||w.collocations.length>2000||w.highFrequency!==false)fail();
       if(w.mnemonic!=null&&(typeof w.mnemonic!=='string'||w.mnemonic.length>5000))fail();
+      if(w.english!=null&&(typeof w.english!=='string'||w.english.length>5000))fail();
       ids.add(String(w.id));keys.add(normalizeWord(w.word));
     }
   }
