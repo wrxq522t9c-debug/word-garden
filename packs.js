@@ -1122,5 +1122,181 @@ export const learningPacks=[
         "collocations": "code of conduct 行为准则"
       }
     ]
+  },
+  {
+    "id": "2026-11-19-practice-01",
+    "date": "2026-11-19",
+    "title": "2026-11-19 阅读积累",
+    "marker": "【2026-11-19 阅读积累】",
+    "entries": [
+      {
+        "word": "deplore",
+        "definition": "v. 谴责；对……感到遗憾",
+        "english": "to strongly disapprove of something and feel it is wrong or unfortunate",
+        "mnemonic": "近义：condemn / denounce / regret。名词 deplorable（糟糕的）；搭配：deplore the decision 谴责这一决定。",
+        "collocations": "deplore the decision 谴责这一决定"
+      },
+      {
+        "word": "worrisome",
+        "definition": "adj. 令人担忧的",
+        "english": "causing worry or concern",
+        "mnemonic": "worry + -some；近义：worrying / concerning / troubling。名词 worry；动词 worry。",
+        "collocations": "a worrisome trend 令人担忧的趋势"
+      },
+      {
+        "word": "excused",
+        "definition": "adj. 被允许缺席的；有正当理由的",
+        "english": "officially allowed to be absent or to leave; justified",
+        "mnemonic": "excuse 的过去分词；搭配：excused absence 请假缺席；be excused from class。反义 unexcused。",
+        "collocations": "excused absence 请假缺席"
+      },
+      {
+        "word": "unexcused",
+        "definition": "adj. 未经允许的；无故的",
+        "english": "not officially permitted or justified",
+        "mnemonic": "un- + excused；搭配：unexcused absence 无故缺席；unexcused lateness。反义 excused。",
+        "collocations": "unexcused absence 无故缺席"
+      },
+      {
+        "word": "comparatively",
+        "definition": "adv. 相对地；比较地",
+        "english": "when compared with something else; relatively",
+        "mnemonic": "comparative + -ly；形容词 comparative；名词 comparison；近义：relatively。搭配：comparatively cheap 相对便宜。",
+        "collocations": "comparatively cheap 相对便宜"
+      },
+      {
+        "word": "underlying causes",
+        "definition": "phr. 根本原因",
+        "english": "the basic or hidden reasons that cause a problem",
+        "mnemonic": "underlying 潜在的/根本的 + causes 原因；近义：root causes / fundamental reasons。搭配：address the underlying causes 解决根本原因。",
+        "collocations": "address the underlying causes 解决根本原因"
+      },
+      {
+        "word": "be determined to do",
+        "definition": "phr. 决心做……",
+        "english": "to have made a firm decision to do something",
+        "mnemonic": "determine + -ed；近义：be resolved to do / make up one's mind to do。名词 determination。",
+        "collocations": "be determined to succeed 决心成功"
+      },
+      {
+        "word": "counsel sb. to do",
+        "definition": "phr. 建议/劝告某人做……",
+        "english": "to advise someone to do something",
+        "mnemonic": "counsel 可作动词“劝告”；名词“律师/顾问”；counselor 顾问/辅导员；counsel against 劝不要。",
+        "collocations": "counsel sb. to seek help 劝某人求助"
+      },
+      {
+        "word": "hold sth. in high regard",
+        "definition": "phr. 高度重视……",
+        "english": "to respect or admire something very much",
+        "mnemonic": "regard 尊重/看待；近义：think highly of / value / respect。反义：hold in low regard。",
+        "collocations": "hold the program in high regard 高度重视该项目"
+      },
+      {
+        "word": "compelling",
+        "definition": "adj. 有说服力的；引人注目的",
+        "english": "very convincing or interesting; impossible to ignore",
+        "mnemonic": "compel + -ing；动词 compel 迫使；compelling evidence 有说服力的证据；compelling story 引人入胜的故事。",
+        "collocations": "compelling evidence 有说服力的证据"
+      },
+      {
+        "word": "pursue sth. with ease",
+        "definition": "phr. 轻松追求……；从容从事……",
+        "english": "to follow or try to achieve something easily and confidently",
+        "mnemonic": "pursue 追求/从事；with ease 轻松地；近义：pursue effortlessly。名词 pursuit。",
+        "collocations": "pursue a career with ease 轻松追求事业"
+      },
+      {
+        "word": "unpaid internship",
+        "definition": "n. 无薪实习",
+        "english": "a period of work experience that is not paid",
+        "mnemonic": "unpaid 无薪的 + internship 实习；intern 实习生；paid internship 带薪实习。",
+        "collocations": "an unpaid internship 无薪实习"
+      },
+      {
+        "word": "aspire to",
+        "definition": "phr. 渴望；立志于",
+        "english": "to desire and aim for something important",
+        "mnemonic": "aspire to do / aspire to sth.；名词 aspiration；近义：aim for / long for / desire。",
+        "collocations": "aspire to become a doctor 立志成为医生"
+      },
+      {
+        "word": "deploy",
+        "definition": "v. 部署，实施（政策/计划）；调动",
+        "english": "to put resources, people, or a plan into use; to position troops or equipment",
+        "mnemonic": "deployment 部署；deploy resources 调配资源；deploy a policy 实施政策。",
+        "collocations": "deploy resources 调配资源"
+      },
+      {
+        "word": "break free from",
+        "definition": "phr. 挣脱，摆脱",
+        "english": "to escape from something that limits or controls you",
+        "mnemonic": "break free 挣脱；近义：escape from / break away from / free oneself from。",
+        "collocations": "break free from poverty 摆脱贫困"
+      },
+      {
+        "word": "commitment",
+        "definition": "n. 承诺；投入；奉献",
+        "english": "a promise or firm decision to do something; dedication to a cause or activity",
+        "mnemonic": "commit + -ment；动词 commit；make a commitment 作出承诺；commitment to education 对教育的投入。",
+        "collocations": "make a commitment 作出承诺"
+      },
+      {
+        "word": "a means to an end",
+        "definition": "phr. 达到目的的手段",
+        "english": "a method or action used only to achieve a goal, not valued for itself",
+        "mnemonic": "means 手段 + end 目的；不是“结束的手段”；注意 means 单复数同形。",
+        "collocations": "a means to an end 达到目的的手段"
+      },
+      {
+        "word": "impose sth. on sb.",
+        "definition": "phr. 将……强加于某人",
+        "english": "to force something unwelcome on someone",
+        "mnemonic": "impose + on；名词 imposition；impose a ban on 对……实施禁令；impose pressure on 施压。",
+        "collocations": "impose a ban on 实施禁令"
+      },
+      {
+        "word": "set the bar",
+        "definition": "phr. 设定标准",
+        "english": "to establish a standard that others must meet",
+        "mnemonic": "bar 这里指“标准/门槛”；raise the bar 提高标准；set the bar high 设定高标准。",
+        "collocations": "set the bar high 设定高标准"
+      },
+      {
+        "word": "detrimental to",
+        "definition": "phr. 对……有害的",
+        "english": "causing harm or damage to something",
+        "mnemonic": "detriment 损害；be detrimental to health 对健康有害；近义：harmful / damaging / adverse。",
+        "collocations": "be detrimental to health 对健康有害"
+      },
+      {
+        "word": "wellbeing",
+        "definition": "n. 幸福，安康；福祉",
+        "english": "the state of being healthy, happy, and comfortable",
+        "mnemonic": "well + being；也写作 well-being；近义：welfare / health / happiness；employee wellbeing 员工福祉。",
+        "collocations": "employee wellbeing 员工福祉"
+      },
+      {
+        "word": "well-off",
+        "definition": "adj. 富裕的；境况好的",
+        "english": "wealthy or in a good financial situation",
+        "mnemonic": "补充：a well-off family 富裕家庭；better-off 更富裕的；辨析 well-being 幸福/福祉（拼写和词义不同）。",
+        "collocations": "a well-off family 富裕家庭"
+      },
+      {
+        "word": "embrace",
+        "definition": "v. 欣然接受；拥抱；n. 拥抱",
+        "english": "to accept something willingly and enthusiastically; to hold someone closely",
+        "mnemonic": "补充：embrace change 拥抱变革；embrace an opportunity 欣然接受机会；比 accept 更主动、更有热情。",
+        "collocations": "embrace change 拥抱变革"
+      },
+      {
+        "word": "remedy",
+        "definition": "n. 补救办法；药物；v. 补救，纠正",
+        "english": "a way of solving a problem; a medicine; to correct or improve something",
+        "mnemonic": "补充：remedy a problem 解决问题；legal remedy 法律救济；近义 solution / cure / fix。",
+        "collocations": "remedy a problem 解决问题"
+      }
+    ]
   }
 ];
